@@ -6,15 +6,15 @@ import "net/http"
 func getProd(w http.ResponseWriter, r *http.Request) {
 }
 
-// POST method: Add a Product (MERCHANT ONLY)
+// POST method: Add a Product to their own store (MERCHANT ONLY)
 func postProd(w http.ResponseWriter, r *http.Request) {
 }
 
-// PUT method: Update existing Product (MERCHANT ONLY)
+// PUT method: Update existing Product on their own store (MERCHANT ONLY)
 func putProd(w http.ResponseWriter, r *http.Request) {
 }
 
-// DELETE method: Delete existing Product (MERCHANT ONLY)
+// DELETE method: Delete existing Product from their own store (MERCHANT ONLY)
 func delProd(w http.ResponseWriter, r *http.Request) {
 
 }
