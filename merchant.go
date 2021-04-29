@@ -158,11 +158,19 @@ func delMerch(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404 - Status not Found"))
 		return
 	}
-	res, err := db.Exec("DELETE FROM merchants where merchantID =?", merchID)
+
+	res, err := db.Exec("DELETE FROM products where merchantID =?", merchID)
 	if err != nil {
 		log.Fatal(err)
 	}
 	_, err = res.RowsAffected()
+
+	res, err = db.Exec("DELETE FROM merchants where merchantID =?", merchID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = res.RowsAffected()
+
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
