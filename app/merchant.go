@@ -66,7 +66,7 @@ func postMerch(w http.ResponseWriter, r *http.Request) {
 
 	var m = &MerchantUser{}
 
-	err := db.QueryRow("SELECT username,email FROM users where name=? OR email=?", name, email).Scan(m.Name, m.Email)
+	err := db.QueryRow("SELECT username,email FROM users where Username=? OR email=?", name, email).Scan(m.Name, m.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("201 - User Creation Successful"))

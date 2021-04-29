@@ -11,7 +11,7 @@ import (
 )
 
 //
-func TestMain(t *testing.T) {
+func TestMain(m *testing.M) {
 	connectionString := fmt.Sprintf("%s:%s@tcp(127.0.0.1:3305)/%s", "user", "password", "store_DB")
 	var err error
 	db, err = sql.Open("mysql", connectionString)
