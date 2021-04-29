@@ -153,7 +153,7 @@ func InitializeDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	Query5 := `	INSERT INTO MERCHANTS (username,password,email) VALUES("A","B","C");`
+	Query5 := `	INSERT INTO MERCHANTS (username,password,email,description) VALUES("A","B","C","d");`
 	_, err = db.Exec(Query5)
 	if err != nil {
 		log.Fatal(err)
