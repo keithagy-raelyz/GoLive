@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 type MerchantUser struct {
@@ -146,8 +147,6 @@ func putMerch(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Updated Successfully"))
-	return
-
 }
 
 // DELETE method - Delete merchant (ADMIN ONLY)
@@ -171,5 +170,4 @@ func delMerch(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Deleted Successfully"))
-	return
 }
