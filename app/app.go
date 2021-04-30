@@ -20,6 +20,9 @@ type App struct {
 	db     *db.Database
 }
 
+type Database interface {
+}
+
 // StartApp initializes the application (called by main).
 func (a *App) StartApp() {
 	a.connectDB()
@@ -42,8 +45,9 @@ func (a *App) connectDB() {
 func (a *App) setRoutes() {
 	a.router.HandleFunc("/", home).Methods("GET")
 
-	//Get all Merchants
+	//Get all Merchants and Products
 	a.router.HandleFunc("/merchants", a.allMerch).Methods("GET")
+	a.router.HandleFunc("/products", a.allProd).Methods("GET")
 
 	//Restful Route for Merchants
 	a.router.HandleFunc("/merchants/{merchantid}", a.getMerch).Methods("GET")

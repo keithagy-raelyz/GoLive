@@ -5,6 +5,10 @@ import (
 	"log"
 )
 
+type Database struct {
+	b *sql.DB
+}
+
 // Initialize the DB schema
 func (d *Database) InitializeDB(db *sql.DB) {
 	d.b = db

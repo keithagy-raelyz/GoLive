@@ -8,6 +8,7 @@ type Product struct {
 	Thumbnail   string
 	Price       float64
 	Quantity    int
+	MerchID     int
 }
 
 func (d *Database) GetAllProducts() ([]Product, error) {
@@ -20,7 +21,7 @@ func (d *Database) GetAllProducts() ([]Product, error) {
 	var Products = make([]Product, 0)
 	for ProductRows.Next() {
 		var newProduct Product
-		err = ProductRows.Scan(&newProduct.Name, &newProduct.Id, &newProduct.Description, &newProduct.Thumbnail, &newProduct.Price, &newProduct.Quantity)
+		err = ProductRows.Scan(&newProduct.Name, &newProduct.Id, &newProduct.Description, &newProduct.Thumbnail, &newProduct.Price, &newProduct.Quantity, newProduct.MerchID)
 		if err != nil {
 			return []Product{}, err
 		}
@@ -39,10 +40,10 @@ func (d *Database) GetProduct(prodID string) (Product, error) {
 	return p, nil
 }
 
-func (d *Database) CreateProduct(product Product, merchID string) error {
+func (d *Database) CreateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Image,Price,Description,MerchantID) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.Description, merchID)
+	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Image,Price,Description,MerchantID) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.Description, product.MerchID)
 	if err != nil {
 		//TODO return custom error msg
 		return err
@@ -55,10 +56,10 @@ func (d *Database) CreateProduct(product Product, merchID string) error {
 	return nil
 }
 
-func (d *Database) UpdateProduct(product Product, merchID string) error {
+func (d *Database) UpdateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	res, err := d.b.Exec("Update Products set Product_Name=?,Quantity=?,Image=?,Price=?,Description=? where ProductID=? AND MerchantID =?", product.Name, product.Quantity, product.Thumbnail, product.Price, product.Description, product.Id, merchID)
+	res, err := d.b.Exec("Update Products set Product_Name=?,Quantity=?,Image=?,Price=?,Description=? where ProductID=? AND MerchantID =?", product.Name, product.Quantity, product.Thumbnail, product.Price, product.Description, product.Id, product.MerchID)
 	if err != nil {
 		//TODO return custom error msg
 		return err
