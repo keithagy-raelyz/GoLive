@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"net/http/httptest"
 	"os"
 
 	//"encoding/json"
@@ -19,7 +20,7 @@ type App struct {
 	db     *db.Database
 }
 
-// StartApp initializes the appliation (called by main).
+// StartApp initializes the application (called by main).
 func (a *App) StartApp() {
 	a.connectDB()
 	a.setRoutes()
@@ -30,25 +31,31 @@ func (a *App) StartApp() {
 func (a *App) connectDB() {
 	connectionString := fmt.Sprintf("%s:%s@tcp(127.0.0.1:%s)/%s", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	var err error
-	a.db, err = sql.Open("mysql", connectionString)
+	var db = &db.Database{}
+	sqlDB, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
-	initializeDB(a.db)
+	db.InitializeDB(sqlDB)
 }
 
 func (a *App) setRoutes() {
 	a.router.HandleFunc("/", home).Methods("GET")
 
-	a.router.HandleFunc("/merchants/{merchantid}", getMerch).Methods("GET")
-	a.router.HandleFunc("/merchants", postMerch).Methods("POST")
-	a.router.HandleFunc("/merchants/{merchantid}", putMerch).Methods("PUT")
-	a.router.HandleFunc("/merchants/{merchantid}", delMerch).Methods("DELETE")
+	//Get all Merchants
+	a.router.HandleFunc("/merchants", a.allMerch).Methods("GET")
 
-	a.router.HandleFunc("/product/{productid}", getProd).Methods("GET")
-	a.router.HandleFunc("/product", postProd).Methods("POST")
-	a.router.HandleFunc("/product/{productid}", putProd).Methods("PUT")
-	a.router.HandleFunc("/product/{productid}", delProd).Methods("DELETE")
+	//Restful Route for Merchants
+	a.router.HandleFunc("/merchants/{merchantid}", a.getMerch).Methods("GET")
+	a.router.HandleFunc("/merchants", a.postMerch).Methods("POST")
+	a.router.HandleFunc("/merchants/{merchantid}", a.putMerch).Methods("PUT")
+	a.router.HandleFunc("/merchants/{merchantid}", a.delMerch).Methods("DELETE")
+
+	//Restful Route for Products
+	a.router.HandleFunc("/products/{productid}", a.getProd).Methods("GET")
+	a.router.HandleFunc("/products", a.postProd).Methods("POST")
+	a.router.HandleFunc("/products/{productid}", a.putProd).Methods("PUT")
+	a.router.HandleFunc("/products/{productid}", a.delProd).Methods("DELETE")
 }
 
 func (a *App) startRouter() {
@@ -56,47 +63,8 @@ func (a *App) startRouter() {
 	log.Fatal(http.ListenAndServe(":5000", a.router))
 }
 
-// Initialize the DB schema
-func initializeDB(db *sql.DB) {
-	Query1 := `CREATE TABLE IF NOT EXISTS Users (
-    UserID int NOT NULL AUTO_INCREMENT,
-    Username VARCHAR(255) NOT NULL,
-    Password VARCHAR(255) NOT NULL,
-    Email varchar(255) NOT NULL,
-    PRIMARY KEY (UserID)
-	)`
-	_, err := db.Exec(Query1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	Query2 := `
-	CREATE TABLE IF NOT EXISTS Merchants (
-		MerchantID int NOT NULL AUTO_INCREMENT,
-		Username VARCHAR(255) NOT NULL,
-		Password VARCHAR(255) NOT NULL,
-		Email varchar(255) NOT NULL,
-		Description VARCHAR(255) NOT NULL,
-		PRIMARY KEY (MerchantID)
-	);`
-	_, err = db.Exec(Query2)
-	if err != nil {
-		log.Fatal(err)
-	}
-	Query3 := `CREATE TABLE IF NOT EXISTS Products (
-    ProductID int NOT NULL AUTO_INCREMENT,
-    Product_Name VARCHAR(255) NOT NULL,
-    Quantity int NOT NULL,
-    Image varchar(255) NOT NULL,
-    Price float not null,
-    Description VARCHAR(255),
-    MerchantID int NOT NULL,
-    Foreign Key (MerchantID) REFERENCES Merchants (MerchantID),
-    PRIMARY KEY (ProductID)
-	);`
-	_, err = db.Exec(Query3)
-	if err != nil {
-		log.Fatal(err)
-	}
+func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Request) {
+	a.router.ServeHTTP(recorder, request)
 }
 
 // Product Handler Functions
@@ -106,7 +74,7 @@ func (a *App) prod(w http.ResponseWriter, r *http.Request) {
 	// PUT method: Update existing Product (MERCHANT ONLY)
 	// DELETE method: Delete existing Product (MERCHANT ONLY)
 
-	// (a.db)SomeCRUD(arg1 arg2)
+	// (a.)SomeCRUD(arg1 arg2)
 }
 
 func cart(w http.ResponseWriter, r *http.Request) {

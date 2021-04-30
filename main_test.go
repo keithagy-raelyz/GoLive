@@ -11,36 +11,17 @@ import (
 )
 
 //
-func TestMain(t *testing.T) {
-	connectionString := fmt.Sprintf("%s:%s@tcp(127.0.0.1:3305)/%s", "user", "password", "store_DB")
-	var err error
-	db, err = sql.Open("mysql", connectionString)
-	if err != nil {
-		log.Fatal(err)
-	}
-	InitializeDB()
-
-	router.HandleFunc("/", home).Methods("GET")
-
-	router.HandleFunc("/merchants/{merchantid}", getMerch).Methods("GET")
-	router.HandleFunc("/merchants", postMerch).Methods("POST")
-	router.HandleFunc("/merchants/{merchantid}", putMerch).Methods("PUT")
-	router.HandleFunc("/merchants/{merchantid}", delMerch).Methods("DELETE")
-
-	router.HandleFunc("/product/{productid}", getProd).Methods("GET")
-	router.HandleFunc("/product", postProd).Methods("POST")
-	router.HandleFunc("/product/{productid}", putProd).Methods("PUT")
-	router.HandleFunc("/product/{productid}", delProd).Methods("DELETE")
-
+func TestMain(m *testing.M) {
+	a.StartApp()
 	//fmt.Println("Listening at port 5000")
 	//log.Fatal(http.ListenAndServe(":5000", router))
 }
 
 // Tests on Store
 // GET Method
-func TestMerchGet(t *testing.T) {
+func TestAllMerch(t *testing.T) {
 	// Passing case: Get all products at a valid store
-	req, err := http.NewRequest(http.MethodGet, "/merchants/1", nil)
+	req, err := http.NewRequest(http.MethodGet, "/merchants", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
@@ -59,7 +40,22 @@ func TestMerchGet(t *testing.T) {
 
 }
 
-func TestMerchPost(t *testing.T) {
+func TestGetMerch(t *testing.T) {
+	req, err := http.NewRequest(http.MethodGet, "/merchants/1", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	// Failing case: Get all products at an invalid store
+	req, err = http.NewRequest(http.MethodGet, "/merchants/300", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusNotFound, nil, req)
+}
+
+func TestPostMerch(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, "/merchants", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
@@ -73,9 +69,34 @@ func TestMerchPost(t *testing.T) {
 
 	checkResponse(t, http.StatusCreated, nil, req)
 }
+
+func TestPutMerch(t *testing.T) {
+
+	req, err := http.NewRequest(http.MethodPut, "/merchants/1?description=hello", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusBadRequest, nil, req)
+	req, err = http.NewRequest(http.MethodPut, "/merchants/1?username=user?email=xxx@hotmail.com?description=hello", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+}
+
+// DB Queries for merchantID/productID can be joint queries
+
+func TestDelMerch(t *testing.T) {
+	req, err := http.NewRequest(http.MethodDelete, "/merchants/1", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+}
+
 func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, req *http.Request) {
 	responseRecorder := httptest.NewRecorder()
-	router.ServeHTTP(responseRecorder, req)
+	a.TestRoute(responseRecorder, req)
 	if responseRecorder.Code != targetStatus {
 		t.Errorf(fmt.Sprintf("Expected response code: %d; Got : %d", targetStatus, responseRecorder.Code))
 	}
@@ -85,24 +106,4 @@ func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, re
 	//if unmarshaled != targetPayload {
 	//	t.Errorf(fmt.Sprintf("Expected content: %s; Got : %s", targetPayload, unmarshaled))
 	//}
-}
-
-func TestMerchPut(t *testing.T) {
-	req, err := http.NewRequest(http.MethodPut, "/merchants/1?description=hello", nil)
-	if err != nil {
-		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
-	}
-
-	checkResponse(t, http.StatusOK, nil, req)
-}
-
-// DB Queries for merchantID/productID can be joint queries
-
-func TestMerchDel(t *testing.T) {
-	req, err := http.NewRequest(http.MethodDelete, "/merchants/1", nil)
-	if err != nil {
-		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
-	}
-
-	checkResponse(t, http.StatusOK, nil, req)
 }
