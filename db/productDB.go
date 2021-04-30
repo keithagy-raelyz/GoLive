@@ -3,12 +3,12 @@ package db
 // TODO Work around circular dependency (db needs types declared in app); for now we are redeclaring the types
 type Product struct {
 	Name        string
-	Id          int
+	Id          string
 	Description string
 	Thumbnail   string
 	Price       float64
 	Quantity    int
-	MerchID     int
+	MerchID     string
 }
 
 func (d *Database) GetAllProducts() ([]Product, error) {
