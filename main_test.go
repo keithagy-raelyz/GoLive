@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
+	// "database/sql"
 	//"encoding/json"
 	"fmt"
-	"log"
+	// "log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
