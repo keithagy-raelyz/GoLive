@@ -99,21 +99,21 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("no description supplied")
 	}
 
-	price := r.URL.Query().Get("price")
-	if thumbnail == "" {
+	price, err := strconv.ParseFloat(r.URL.Query().Get("price"), 64)
+	if r.URL.Query().Get("price") == "" || err != nil {
 		//TODO proper error handling
 		log.Fatal("no description supplied")
 	}
 
-	quantity := r.URL.Query().Get("quantity")
-	if thumbnail == "" {
+	quantity, err := strconv.Atoi(r.URL.Query().Get("quantity"))
+	if r.URL.Query().Get("quantity") == "" || err != nil {
 		//TODO proper error handling
 		log.Fatal("no description supplied")
 	}
 
 	// TODO session handling to supply correct MerchID
 	p := db.Product{name, prodID, description, thumbnail, price, quantity, 0}
-	err := a.db.UpdateProduct(p)
+	err = a.db.UpdateProduct(p)
 	if err != nil {
 		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
