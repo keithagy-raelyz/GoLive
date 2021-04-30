@@ -1,6 +1,5 @@
 package db
 
-// TODO Work around circular dependency (db needs types declared in app); for now we are redeclaring the types
 type Product struct {
 	Name        string
 	Id          string

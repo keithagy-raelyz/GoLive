@@ -1,6 +1,5 @@
 package db
 
-// TODO Work around circular dependency (db needs types declared in app); for now we are redeclaring the types
 // MerchantUser has User's account details, with Description of storefront.
 type MerchantUser struct {
 	User
