@@ -43,6 +43,7 @@ func (a *App) connectDB() {
 }
 
 func (a *App) setRoutes() {
+
 	a.router.HandleFunc("/", home).Methods("GET")
 
 	//Get all Merchants and Products
@@ -60,6 +61,11 @@ func (a *App) setRoutes() {
 	a.router.HandleFunc("/products", a.postProd).Methods("POST")
 	a.router.HandleFunc("/products/{productid}", a.putProd).Methods("PUT")
 	a.router.HandleFunc("/products/{productid}", a.delProd).Methods("DELETE")
+
+	a.router.HandleFunc("/users/{userid}", a.getProd).Methods("GET")
+	a.router.HandleFunc("/users", a.postProd).Methods("POST")
+	a.router.HandleFunc("/users/{userid}", a.putProd).Methods("PUT")
+	a.router.HandleFunc("/users/{userid}", a.delProd).Methods("DELETE")
 }
 
 func (a *App) startRouter() {
@@ -69,30 +75,6 @@ func (a *App) startRouter() {
 
 func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Request) {
 	a.router.ServeHTTP(recorder, request)
-}
-
-// Product Handler Functions
-func (a *App) prod(w http.ResponseWriter, r *http.Request) {
-	// GET method: Show a particular product given productid, show all products otherwise (USER / MERCHANT)
-	// POST method: Add a Product (MERCHANT ONLY)
-	// PUT method: Update existing Product (MERCHANT ONLY)
-	// DELETE method: Delete existing Product (MERCHANT ONLY)
-
-	// (a.)SomeCRUD(arg1 arg2)
-}
-
-func cart(w http.ResponseWriter, r *http.Request) {
-	// GET method: Show a user's entire cart (USER ONLY)
-	// POST method: Add a Product to a user's cart (USER ONLY)
-	// PUT method: Edit item in user's cart (USER ONLY)
-	// DELETE method: Delete existing Product (MERCHANT ONLY)
-}
-
-func users(w http.ResponseWriter, r *http.Request) {
-	// GET method: Username registry (ADMIN ONLY)
-	// POST method: Add new user (ADMIN ONLY)
-	// PUT method: Edit new user (ADMIN ONLY)
-	// DELETE method: Delete user (ADMIN ONLY)
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
