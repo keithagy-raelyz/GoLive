@@ -1,3 +1,4 @@
 package db
 
-type Auth struct
+type Auth struct {
+}

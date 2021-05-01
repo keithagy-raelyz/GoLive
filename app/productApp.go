@@ -61,7 +61,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO Session handling to get MerchID
-	p := db.Product{name, 0, description, thumbnail, price, quantity, 0}
+	p := db.Product{Name: name, Description: description, Thumbnail: thumbnail, Price: price, Quantity: quantity}
 	err = a.db.CreateProduct(p)
 	if err != nil {
 		// TODO error handling
@@ -112,7 +112,7 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO session handling to supply correct MerchID
-	p := db.Product{name, prodID, description, thumbnail, price, quantity, 0}
+	p := db.Product{name, prodID, description, thumbnail, price, quantity, ""}
 	err = a.db.UpdateProduct(p)
 	if err != nil {
 		//TODO proper error handling in template

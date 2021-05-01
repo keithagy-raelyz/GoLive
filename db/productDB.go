@@ -2,7 +2,7 @@ package db
 
 type Product struct {
 	Name        string
-	Id          int
+	Id          string
 	Description string
 	Thumbnail   string
 	Price       float64

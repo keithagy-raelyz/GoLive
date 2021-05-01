@@ -8,7 +8,7 @@ type User struct {
 	Password string
 }
 
-func (d *Database) getUser(userID string) (User, error) {
+func (d *Database) GetUser(userID string) (User, error) {
 	result := d.b.QueryRow("SELECT UserID, Username FROM Users WHERE UserID = ?", userID)
 	var user User
 
@@ -16,8 +16,8 @@ func (d *Database) getUser(userID string) (User, error) {
 
 }
 
-func (d *Database) CreateUser(user User) error {
-	res, err := d.b.Exec("INSERT INTO Users (Username,Password,Email) VALUES (?,?,?)", user.Name, user.Password, user.Email)
+func (d *Database) CreateUser(user User, password string) error {
+	res, err := d.b.Exec("INSERT INTO Users (Username,Password,Email) VALUES (?,?,?)", user.Name, password, user.Email)
 	if err != nil {
 		//TODO return custom error msg
 		return err
