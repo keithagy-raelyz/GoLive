@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/keithagy-raelyz/GoLive/app"
+	"GoLive/app"
 
 	// "log"
 	"net/http"
@@ -53,7 +53,7 @@ func TestGetMerch(t *testing.T) {
 	checkResponse(t, http.StatusOK, nil, req)
 
 	// Passing test case: Merchant has no products
-	req, err = http.NewRequest(http.MethodGet, "/merchants/1", nil)
+	req, err = http.NewRequest(http.MethodGet, "/merchants/3", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
@@ -74,7 +74,7 @@ func TestPostMerch(t *testing.T) {
 	}
 	req.ParseForm()
 	req.Form.Add("username", "abcd1234")
-	req.Form.Add("description", "selling drugs")
+	req.Form.Add("MerchDesc", "selling drugs")
 	req.Form.Add("email", "test@email.com")
 	req.Form.Add("pw1", "a")
 	req.Form.Add("pw2", "a")
@@ -84,22 +84,35 @@ func TestPostMerch(t *testing.T) {
 
 func TestPutMerch(t *testing.T) {
 
-	req, err := http.NewRequest(http.MethodPut, "/merchants/1?description=hello", nil)
+	req, err := http.NewRequest(http.MethodPut, "/merchants/1?MerchDesc=hello", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
 	checkResponse(t, http.StatusBadRequest, nil, req)
-	req, err = http.NewRequest(http.MethodPut, "/merchants/1?username=user?email=xxx@hotmail.com?description=hello", nil)
+	req, err = http.NewRequest(http.MethodPut, "/merchants/1?username=abcd1234&email=test@email.com&MerchDesc=hello", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
 	checkResponse(t, http.StatusOK, nil, req)
 }
 
-// DB Queries for merchantID/productID can be joint queries
-
 func TestDelMerch(t *testing.T) {
+	// No merchant, No product
 	req, err := http.NewRequest(http.MethodDelete, "/merchants/1", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	// Have merchant, Have product
+	req, err = http.NewRequest(http.MethodDelete, "/merchants/2", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	// Have merchant, No product
+	req, err = http.NewRequest(http.MethodDelete, "/merchants/3", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}

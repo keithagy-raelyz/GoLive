@@ -10,10 +10,11 @@ import (
 	"log"
 	"net/http"
 
+	"GoLive/db"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"github.com/keithagy-raelyz/GoLive/db"
 )
 
 type App struct {

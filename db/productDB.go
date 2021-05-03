@@ -1,17 +1,17 @@
 package db
 
 type Product struct {
-	Name        string
-	Id          string
-	Description string
-	Thumbnail   string
-	Price       float64
-	Quantity    int
-	MerchID     string
+	Name      string
+	Id        string
+	ProdDesc  string
+	Thumbnail string
+	Price     float64
+	Quantity  int
+	MerchID   string
 }
 
 func (d *Database) GetAllProducts() ([]Product, error) {
-	ProductRows, err := d.b.Query("SELECT ProductID, Product_Name, description FROM Products")
+	ProductRows, err := d.b.Query("SELECT ProductID, Product_Name, ProdDesc FROM Products")
 	if err != nil {
 		return []Product{}, err
 	}
@@ -20,7 +20,7 @@ func (d *Database) GetAllProducts() ([]Product, error) {
 	var Products = make([]Product, 0)
 	for ProductRows.Next() {
 		var newProduct Product
-		err = ProductRows.Scan(&newProduct.Name, &newProduct.Id, &newProduct.Description, &newProduct.Thumbnail, &newProduct.Price, &newProduct.Quantity, newProduct.MerchID)
+		err = ProductRows.Scan(&newProduct.Name, &newProduct.Id, &newProduct.ProdDesc, &newProduct.Thumbnail, &newProduct.Price, &newProduct.Quantity, newProduct.MerchID)
 		if err != nil {
 			return []Product{}, err
 		}
@@ -31,7 +31,7 @@ func (d *Database) GetAllProducts() ([]Product, error) {
 
 func (d *Database) GetProduct(prodID string) (Product, error) {
 	var p Product
-	err := d.b.QueryRow("Select * from products where ProductID=?", prodID).Scan(&p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.Description)
+	err := d.b.QueryRow("Select * from products where ProductID=?", prodID).Scan(&p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.ProdDesc)
 	if err != nil {
 		//TODO return custom error msg
 		return Product{}, err
@@ -42,7 +42,7 @@ func (d *Database) GetProduct(prodID string) (Product, error) {
 func (d *Database) CreateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Image,Price,Description,MerchantID) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.Description, product.MerchID)
+	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Thumbnail,Price,ProdDesc,MerchantID) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.MerchID)
 	if err != nil {
 		//TODO return custom error msg
 		return err
@@ -58,7 +58,7 @@ func (d *Database) CreateProduct(product Product) error {
 func (d *Database) UpdateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	res, err := d.b.Exec("Update Products set Product_Name=?,Quantity=?,Image=?,Price=?,Description=? where ProductID=? AND MerchantID =?", product.Name, product.Quantity, product.Thumbnail, product.Price, product.Description, product.Id, product.MerchID)
+	res, err := d.b.Exec("Update Products set Product_Name=?,Quantity=?,Thumbnail=?,Price=?,ProdDesc=? where ProductID=? AND MerchantID =?", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.Id, product.MerchID)
 	if err != nil {
 		//TODO return custom error msg
 		return err

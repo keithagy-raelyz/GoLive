@@ -29,7 +29,7 @@ func (d *Database) InitializeDB(db *sql.DB) {
 		Username VARCHAR(255) NOT NULL,
 		Password VARCHAR(255) NOT NULL,
 		Email varchar(255) NOT NULL,
-		Description VARCHAR(255) NOT NULL,
+		MerchDesc VARCHAR(255) NOT NULL,
 		PRIMARY KEY (MerchantID)
 	);`
 	_, err = d.b.Exec(Query2)
@@ -40,9 +40,9 @@ func (d *Database) InitializeDB(db *sql.DB) {
     ProductID int NOT NULL AUTO_INCREMENT,
     Product_Name VARCHAR(255) NOT NULL,
     Quantity int NOT NULL,
-    Image varchar(255) NOT NULL,
+    Thumbnail varchar(255) NOT NULL,
     Price float not null,
-    Description VARCHAR(255),
+    ProdDesc VARCHAR(255),
     MerchantID int NOT NULL,
     Foreign Key (MerchantID) REFERENCES Merchants (MerchantID),
     PRIMARY KEY (ProductID)

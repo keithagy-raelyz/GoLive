@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"GoLive/db"
+
 	"github.com/gorilla/mux"
-	"github.com/keithagy-raelyz/GoLive/db"
 )
 
 func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +48,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	// Checking for non-empty inputs to be handled by HTML form
 	name := r.FormValue("name")
-	description := r.FormValue("description")
+	ProdDesc := r.FormValue("ProdDesc")
 	thumbnail := r.FormValue("thumbnail")
 	price, err := strconv.ParseFloat(r.FormValue("price"), 64)
 	if err != nil {
@@ -61,7 +62,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO Session handling to get MerchID
-	p := db.Product{Name: name, Description: description, Thumbnail: thumbnail, Price: price, Quantity: quantity}
+	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity}
 	err = a.db.CreateProduct(p)
 	if err != nil {
 		// TODO error handling
@@ -84,35 +85,35 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	if name == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		log.Fatal("no name supplied")
 	}
 
-	description := r.URL.Query().Get("description")
-	if description == "" {
+	ProdDesc := r.URL.Query().Get("ProdDesc")
+	if ProdDesc == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		log.Fatal("no ProdDesc supplied")
 	}
 
 	thumbnail := r.URL.Query().Get("thumbnail")
 	if thumbnail == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		log.Fatal("no thumbnail supplied")
 	}
 
 	price, err := strconv.ParseFloat(r.URL.Query().Get("price"), 64)
 	if r.URL.Query().Get("price") == "" || err != nil {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		log.Fatal("no ProdDesc supplied")
 	}
 
 	quantity, err := strconv.Atoi(r.URL.Query().Get("quantity"))
 	if r.URL.Query().Get("quantity") == "" || err != nil {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		log.Fatal("no quantity supplied")
 	}
 
 	// TODO session handling to supply correct MerchID
-	p := db.Product{name, prodID, description, thumbnail, price, quantity, ""}
+	p := db.Product{name, prodID, ProdDesc, thumbnail, price, quantity, ""}
 	err = a.db.UpdateProduct(p)
 	if err != nil {
 		//TODO proper error handling in template

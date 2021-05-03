@@ -1,12 +1,13 @@
 package app
 
 import (
+	"GoLive/db"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/keithagy-raelyz/GoLive/db"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func (a *App) getUser(w http.ResponseWriter, r *http.Request) {

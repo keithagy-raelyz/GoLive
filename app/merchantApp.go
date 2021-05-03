@@ -7,8 +7,9 @@ import (
 
 	"strings"
 
+	"GoLive/db"
+
 	"github.com/gorilla/mux"
-	"github.com/keithagy-raelyz/GoLive/db"
 )
 
 func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Execute some template passing in merchants slice
-	fmt.Println(merchants)
+	fmt.Println("Merchants:", merchants)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Displaying all merchants"))
@@ -37,18 +38,24 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
 	// TODO inventory has to be renamed to accurately reflect no rows were found
-	inventory, err := a.db.GetInventory(merchID)
+	merchant, inventory, err := a.db.GetInventory(merchID)
 	if err != nil {
-		log.Fatal(err, "DB get Inventory Fatal Error")
+		// Merchant exist but no product
+		fmt.Println("Blank inventory for merchid:", merchID, merchant)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("200 - Valid merchID but empty inventory"))
+		// fmt.Println("200, empty inv, merchID:", merchID)
+		return
 	}
 
 	if inventory == nil {
-		// Valid merchant ID but no products under merchant ID
+		// Invalid Merchant ID
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 - No merchant for inputted merchant ID"))
+		w.Write([]byte("404 - Invalid merchID"))
+		// fmt.Println("404, invalid merchID, merchID:", merchID)
 		return
 	}
-	fmt.Println("Inventory for merchID:", merchID, inventory)
+	// fmt.Println("Inventory for merchID:", merchID, inventory)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Valid merchant ID, displaying store"))
 }
@@ -59,7 +66,7 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	username := r.FormValue("username")
 	email := strings.ToLower(r.FormValue("email"))
-	description := r.FormValue("description")
+	MerchDesc := r.FormValue("MerchDesc")
 	pw1 := r.FormValue("pw1")
 	pw2 := r.FormValue("pw2")
 
@@ -78,8 +85,8 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 	err := a.db.CheckMerchant(m)
 	if err != nil {
 
-		//check description and pw
-		m.Description = description
+		//check MerchDesc and pw
+		m.MerchDesc = MerchDesc
 		if pw1 != pw2 {
 			//t.ParseFiles("./templates/errorRegister.html")
 			//data := Data{nil, ErrorMsg{"color:red", "Password entered are different"}, ErrorMsg{"display:none", ""}, ErrorMsg{"display:block", ""}, 0, nil}
@@ -117,11 +124,11 @@ func (a *App) putMerch(w http.ResponseWriter, r *http.Request) {
 		// TODO display error message serve a proper template redirecting to registry of all merchants
 		return
 	}
-	description := r.URL.Query().Get("description")
-	if description == "" {
+	MerchDesc := r.URL.Query().Get("MerchDesc")
+	if MerchDesc == "" {
 		//TODO proper error handling
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - no description supplied"))
+		w.Write([]byte("400 - no MerchDesc supplied"))
 		return
 	}
 	username := r.URL.Query().Get("username")
@@ -158,6 +165,7 @@ func (a *App) putMerch(w http.ResponseWriter, r *http.Request) {
 func (a *App) delMerch(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	merchID, ok := params["merchantid"]
+	// fmt.Println(merchID)
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Status not Found"))
@@ -165,9 +173,7 @@ func (a *App) delMerch(w http.ResponseWriter, r *http.Request) {
 	}
 	err := a.db.DeleteMerchant(merchID)
 	if err != nil {
-		log.Fatal(err)
-	}
-	if err != nil {
+		// fmt.Println(err)
 		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))

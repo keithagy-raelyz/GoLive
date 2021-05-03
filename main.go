@@ -5,8 +5,9 @@ import (
 	//"encoding/json"
 	// "fmt"
 
+	"GoLive/app"
+
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/keithagy-raelyz/GoLive/app"
 )
 
 var (
