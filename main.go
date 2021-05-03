@@ -14,6 +14,7 @@ var (
 )
 
 func main() {
+	a := &app.App{}
 	a.StartApp()
 }
 

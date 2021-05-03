@@ -29,7 +29,7 @@ func (a *App) StartApp() {
 	godotenv.Load()
 	a.connectDB()
 	a.setRoutes()
-	a.startRouter()
+	//a.startRouter()
 }
 
 // Helpers for starting application.
@@ -45,7 +45,6 @@ func (a *App) connectDB() {
 }
 
 func (a *App) setRoutes() {
-
 	a.router = mux.NewRouter()
 
 	a.router.HandleFunc("/", home).Methods("GET")
