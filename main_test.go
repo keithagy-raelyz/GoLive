@@ -45,18 +45,18 @@ func TestAllMerch(t *testing.T) {
 
 func TestGetMerch(t *testing.T) {
 	//Passing test case: Merchant has no products
-	req, err := http.NewRequest(http.MethodGet, "/merchants/1", nil)
+	req, err := http.NewRequest(http.MethodGet, "/merchants/8", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
 	checkResponse(t, http.StatusOK, nil, req)
 
 	//Passing test case: Merchant has products
-	req, err = http.NewRequest(http.MethodGet, "/merchants/8", nil)
-	if err != nil {
-		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
-	}
-	checkResponse(t, http.StatusOK, nil, req)
+	//req, err = http.NewRequest(http.MethodGet, "/merchants/1", nil)
+	//if err != nil {
+	//	t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	//}
+	//checkResponse(t, http.StatusOK, nil, req)
 
 	//Failing case: Get all products at an invalid store
 	req, err = http.NewRequest(http.MethodGet, "/merchants/300", nil)
