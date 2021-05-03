@@ -19,7 +19,7 @@ func (d *Database) InitializeDB(db *sql.DB) {
     Email varchar(255) NOT NULL,
     PRIMARY KEY (UserID)
 	)`
-	_, err := db.Exec(Query1)
+	_, err := d.b.Exec(Query1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func (d *Database) InitializeDB(db *sql.DB) {
 		Description VARCHAR(255) NOT NULL,
 		PRIMARY KEY (MerchantID)
 	);`
-	_, err = db.Exec(Query2)
+	_, err = d.b.Exec(Query2)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func (d *Database) InitializeDB(db *sql.DB) {
     Foreign Key (MerchantID) REFERENCES Merchants (MerchantID),
     PRIMARY KEY (ProductID)
 	);`
-	_, err = db.Exec(Query3)
+	_, err = d.b.Exec(Query3)
 	if err != nil {
 		log.Fatal(err)
 	}
