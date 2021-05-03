@@ -36,20 +36,16 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
-	// TODO GetInventory errors need to be multiplexed to differentiate between invalid merchant and empty store
+	// TODO inventory has to be renamed to accurately reflect no rows were found
 	inventory, err := a.db.GetInventory(merchID)
 	if err != nil {
-
-		// Invalid merchant ID inputted
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 - No merchant for inputted merchant ID"))
-		return
+		log.Fatal(err, "DB get Inventory Fatal Error")
 	}
 
 	if inventory == nil {
 		// Valid merchant ID but no products under merchant ID
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("200 - Valid merchant ID, but store is empty"))
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("404 - No merchant for inputted merchant ID"))
 		return
 	}
 	fmt.Println(inventory)

@@ -1,7 +1,5 @@
 package db
 
-import "fmt"
-
 // MerchantUser has User's account details, with Description of storefront.
 type MerchantUser struct {
 	User
@@ -39,21 +37,19 @@ func (d *Database) GetInventory(merchID string) ([]Product, error) {
 		return []Product{}, err
 	}
 	defer merchProdsRows.Close()
-	fmt.Println(merchProdsRows, "42")
-	var merchProds = make([]Product, 0)
+
+	var merchProds []Product
 	var merch = &Merchant{}
 	for merchProdsRows.Next() {
-		fmt.Println("i got called")
 		var p Product
 		// TODO Need to fix so merch only gets scanned ONCE
 		err = merchProdsRows.Scan(&merch.Name, &merch.Id, &merch.Description, &p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.Description)
 		if err != nil {
-			fmt.Println(err, "line52")
 			return []Product{}, err
 		}
 		merchProds = append(merchProds, p)
 	}
-	fmt.Println(merchProds, "line57")
+
 	return merchProds, nil
 }
 
