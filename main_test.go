@@ -18,7 +18,6 @@ var (
 	a *app.App
 )
 
-//
 func TestMain(m *testing.M) {
 	a = &app.App{}
 	a.StartApp()
@@ -28,7 +27,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// Tests on Store
+// Tests on Merchant Methods
 // GET Method
 func TestAllMerch(t *testing.T) {
 	// Passing case: Get all products at a valid store
@@ -46,14 +45,14 @@ func TestAllMerch(t *testing.T) {
 
 func TestGetMerch(t *testing.T) {
 	//Passing test case: Merchant has products
-	req, err := http.NewRequest(http.MethodGet, "/merchants/2", nil)
+	req, err := http.NewRequest(http.MethodGet, "/merchants/10", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
 	checkResponse(t, http.StatusOK, nil, req)
 
 	// Passing test case: Merchant has no products
-	req, err = http.NewRequest(http.MethodGet, "/merchants/3", nil)
+	req, err = http.NewRequest(http.MethodGet, "/merchants/13", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
@@ -118,6 +117,117 @@ func TestDelMerch(t *testing.T) {
 	}
 	checkResponse(t, http.StatusOK, nil, req)
 }
+
+// Tests on Product Methods
+// GET Method
+
+func TestAllProd(t *testing.T) {
+	req, err := http.NewRequest(http.MethodGet, "/products", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+}
+
+func TestGetProd(t *testing.T) {
+	// Product Exists
+	req, err := http.NewRequest(http.MethodGet, "/products/6", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	// Product Does Not Exist
+	req, err = http.NewRequest(http.MethodGet, "/products/100", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusNotFound, nil, req)
+}
+
+func TestPostProd(t *testing.T) {
+	// Post product that does not yet exist
+	req, err := http.NewRequest(http.MethodPost, "/products", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Name", "'Dog Biscuits'")
+	req.Form.Add("Quantity", "100")
+	req.Form.Add("Thumbnail", "https://picsum.photos/200")
+	req.Form.Add("Price", "499.99")
+	req.Form.Add("ProdDesc", "It's a dog biscuit, dude.")
+	req.Form.Add("MerchID", "15")
+	checkResponse(t, http.StatusCreated, nil, req)
+
+	// Post product with an invalid MerchID
+	// TODO When session management is up, can only post to own MerchID
+	req, err = http.NewRequest(http.MethodPost, "/products", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Name", "Lettuce")
+	req.Form.Add("Quantity", "10")
+	req.Form.Add("Thumbnail", "https://picsum.photos/200")
+	req.Form.Add("Price", "0.05")
+	req.Form.Add("ProdDesc", "Nutritionally like cardboard.")
+	req.Form.Add("MerchID", "6")
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	// Post product with negative price
+	req, err = http.NewRequest(http.MethodPost, "/products", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Name", "Ketchup")
+	req.Form.Add("Quantity", "23")
+	req.Form.Add("Thumbnail", "https://picsum.photos/200")
+	req.Form.Add("Price", "-0.05")
+	req.Form.Add("ProdDesc", "Tomatoes.")
+	req.Form.Add("MerchID", "17")
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	// Post product with negative quantity
+	req, err = http.NewRequest(http.MethodPost, "/products", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Name", "Watch")
+	req.Form.Add("Quantity", "-10")
+	req.Form.Add("Thumbnail", "https://picsum.photos/200")
+	req.Form.Add("Price", "0.05")
+	req.Form.Add("ProdDesc", "Tells the time.")
+	req.Form.Add("MerchID", "18")
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	// Post product with empty ProdDesc
+	req, err = http.NewRequest(http.MethodPost, "/products", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Name", "Nothing")
+	req.Form.Add("Quantity", "56789")
+	req.Form.Add("Thumbnail", "https://picsum.photos/200")
+	req.Form.Add("Price", "0.01")
+	req.Form.Add("ProdDesc", "")
+	req.Form.Add("MerchID", "19")
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+}
+
+// func TestPutProd (t *testing.T){
+// 	req, err := http.NewRequest(http.MethodPost, "/products", nil)
+// 	if err != nil {
+// 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+// 	}
+// }
+
+// func TestDelProd (t *testing.T){
+
+// }
 
 func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, req *http.Request) {
 	responseRecorder := httptest.NewRecorder()

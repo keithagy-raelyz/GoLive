@@ -1,17 +1,19 @@
 package db
 
+import "fmt"
+
 type Product struct {
-	Name      string
 	Id        string
-	ProdDesc  string
+	Name      string
+	Quantity  int
 	Thumbnail string
 	Price     float64
-	Quantity  int
+	ProdDesc  string
 	MerchID   string
 }
 
 func (d *Database) GetAllProducts() ([]Product, error) {
-	ProductRows, err := d.b.Query("SELECT ProductID, Product_Name, ProdDesc FROM Products")
+	ProductRows, err := d.b.Query("SELECT * FROM Products WHERE Quantity != 0")
 	if err != nil {
 		return []Product{}, err
 	}
@@ -20,7 +22,7 @@ func (d *Database) GetAllProducts() ([]Product, error) {
 	var Products = make([]Product, 0)
 	for ProductRows.Next() {
 		var newProduct Product
-		err = ProductRows.Scan(&newProduct.Name, &newProduct.Id, &newProduct.ProdDesc, &newProduct.Thumbnail, &newProduct.Price, &newProduct.Quantity, newProduct.MerchID)
+		err = ProductRows.Scan(&newProduct.Id, &newProduct.Name, &newProduct.Quantity, &newProduct.Thumbnail, &newProduct.Price, &newProduct.ProdDesc, &newProduct.MerchID)
 		if err != nil {
 			return []Product{}, err
 		}
@@ -30,18 +32,19 @@ func (d *Database) GetAllProducts() ([]Product, error) {
 }
 
 func (d *Database) GetProduct(prodID string) (Product, error) {
-	var p Product
-	err := d.b.QueryRow("Select * from products where ProductID=?", prodID).Scan(&p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.ProdDesc)
+	var newProduct Product
+	err := d.b.QueryRow("Select * from products where ProductID=?", prodID).Scan(&newProduct.Id, &newProduct.Name, &newProduct.Quantity, &newProduct.Thumbnail, &newProduct.Price, &newProduct.ProdDesc, &newProduct.MerchID)
 	if err != nil {
 		//TODO return custom error msg
 		return Product{}, err
 	}
-	return p, nil
+	return newProduct, nil
 }
 
 func (d *Database) CreateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
+	fmt.Println(product)
 	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Thumbnail,Price,ProdDesc,MerchantID) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.MerchID)
 	if err != nil {
 		//TODO return custom error msg

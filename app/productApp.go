@@ -21,13 +21,12 @@ func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Execute some template passing in products slice
 	fmt.Println(products)
-	return
 }
 
 func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	// Verify valid product ID
-	prodID, _ := params["productid"]
+	prodID := params["productid"]
 
 	// Product ID supplied
 	// Show all products under prodID; if invalid prodID handle error
@@ -47,26 +46,39 @@ func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	// Checking for non-empty inputs to be handled by HTML form
-	name := r.FormValue("name")
+	name := r.FormValue("Name")
 	ProdDesc := r.FormValue("ProdDesc")
-	thumbnail := r.FormValue("thumbnail")
-	price, err := strconv.ParseFloat(r.FormValue("price"), 64)
+	thumbnail := r.FormValue("Thumbnail")
+	price, err := strconv.ParseFloat(r.FormValue("Price"), 64)
 	if err != nil {
 		// TODO error handling
 		log.Fatal(err)
 	}
-	quantity, err := strconv.Atoi(r.FormValue("quantity"))
+	quantity, err := strconv.Atoi(r.FormValue("Quantity"))
 	if err != nil {
 		// TODO error handling
 		log.Fatal(err)
 	}
 
-	// TODO Session handling to get MerchID
-	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity}
-	err = a.db.CreateProduct(p)
+	merchID := r.FormValue("MerchID")
 	if err != nil {
 		// TODO error handling
 		log.Fatal(err)
+	}
+
+	if price <= 0 || quantity < 0 || ProdDesc == "" {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid Price and/or Quantity submitted"))
+	}
+
+	// TODO Session handling to get MerchID
+	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity, MerchID: merchID}
+	err = a.db.CreateProduct(p)
+	if err != nil {
+		// TODO error handling
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Merchant ID provided is Invalid"))
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -113,7 +125,13 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO session handling to supply correct MerchID
-	p := db.Product{name, prodID, ProdDesc, thumbnail, price, quantity, ""}
+	p := db.Product{
+		Id:        prodID,
+		Name:      name,
+		Quantity:  quantity,
+		Thumbnail: thumbnail,
+		Price:     price,
+		ProdDesc:  ProdDesc}
 	err = a.db.UpdateProduct(p)
 	if err != nil {
 		//TODO proper error handling in template

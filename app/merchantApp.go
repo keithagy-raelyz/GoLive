@@ -33,7 +33,7 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	// Verify valid merchant ID
-	merchID, _ := params["merchantid"]
+	merchID := params["merchantid"]
 
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error

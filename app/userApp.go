@@ -13,7 +13,7 @@ import (
 func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	// Verify valid merchant ID
-	userID, _ := params["userid"]
+	userID := params["userid"]
 
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
