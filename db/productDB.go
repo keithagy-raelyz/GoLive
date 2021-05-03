@@ -1,6 +1,9 @@
 package db
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type Product struct {
 	Id        string
@@ -44,7 +47,6 @@ func (d *Database) GetProduct(prodID string) (Product, error) {
 func (d *Database) CreateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	fmt.Println(product)
 	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Thumbnail,Price,ProdDesc,MerchantID) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.MerchID)
 	if err != nil {
 		//TODO return custom error msg
@@ -59,6 +61,7 @@ func (d *Database) CreateProduct(product Product) error {
 }
 
 func (d *Database) UpdateProduct(product Product) error {
+	fmt.Println(product)
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
 	res, err := d.b.Exec("Update Products set Product_Name=?,Quantity=?,Thumbnail=?,Price=?,ProdDesc=? where ProductID=? AND MerchantID =?", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.Id, product.MerchID)
@@ -67,9 +70,12 @@ func (d *Database) UpdateProduct(product Product) error {
 		return err
 	}
 	rowCount, err := res.RowsAffected()
-	if err != nil || rowCount != 1 {
-		//TODO return custom error msg
+	if err != nil {
 		return err
+	}
+	if rowCount > 1 {
+		//TODO return custom error msg
+		return errors.New("More than 1 row is affected")
 	}
 	return nil
 }
@@ -77,7 +83,7 @@ func (d *Database) UpdateProduct(product Product) error {
 func (d *Database) DeleteProduct(prodID string, merchID string) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	res, err := d.b.Exec("DELETE FROM products where ProductID =? AND merchID =?", prodID, merchID)
+	res, err := d.b.Exec("DELETE FROM products where ProductID =? AND MerchantID =?", prodID, merchID)
 	if err != nil {
 		//TODO return custom error msg
 		return err

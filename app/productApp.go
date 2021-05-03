@@ -66,9 +66,10 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	if price <= 0 || quantity < 0 || ProdDesc == "" {
+	if price <= 0 || quantity < 0 || ProdDesc == "" || name == "" {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid Price and/or Quantity submitted"))
+		return
 	}
 
 	// TODO Session handling to get MerchID
@@ -80,7 +81,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("422 - Merchant ID provided is Invalid"))
 		return
 	}
-
+	fmt.Println(p, "TESTING PRODUCT")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("201 - Product Creation Successful"))
 }
@@ -94,34 +95,52 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := r.URL.Query().Get("name")
+	name := r.URL.Query().Get("Name")
 	if name == "" {
 		//TODO proper error handling
-		log.Fatal("no name supplied")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid Name submitted"))
+		return
+	}
+
+	quantity, err := strconv.Atoi(r.URL.Query().Get("Quantity"))
+	if r.URL.Query().Get("Quantity") == "" || err != nil {
+		//TODO proper error handling
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid Quantity submitted"))
+		return
+	}
+
+	price, err := strconv.ParseFloat(r.URL.Query().Get("Price"), 64)
+	if r.URL.Query().Get("Price") == "" || err != nil {
+		//TODO proper error handling
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid Price submitted"))
+		return
 	}
 
 	ProdDesc := r.URL.Query().Get("ProdDesc")
 	if ProdDesc == "" {
 		//TODO proper error handling
-		log.Fatal("no ProdDesc supplied")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid ProdDesc submitted"))
+		return
 	}
 
-	thumbnail := r.URL.Query().Get("thumbnail")
+	merchID := r.URL.Query().Get("MerchID")
+	if merchID == "" {
+		//TODO proper error handling
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid MerchID submitted"))
+		return
+	}
+
+	thumbnail := r.URL.Query().Get("Thumbnail")
 	if thumbnail == "" {
 		//TODO proper error handling
-		log.Fatal("no thumbnail supplied")
-	}
-
-	price, err := strconv.ParseFloat(r.URL.Query().Get("price"), 64)
-	if r.URL.Query().Get("price") == "" || err != nil {
-		//TODO proper error handling
-		log.Fatal("no ProdDesc supplied")
-	}
-
-	quantity, err := strconv.Atoi(r.URL.Query().Get("quantity"))
-	if r.URL.Query().Get("quantity") == "" || err != nil {
-		//TODO proper error handling
-		log.Fatal("no quantity supplied")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte("422 - Invalid Thumbnail submitted"))
+		return
 	}
 
 	// TODO session handling to supply correct MerchID
@@ -131,9 +150,11 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 		Quantity:  quantity,
 		Thumbnail: thumbnail,
 		Price:     price,
-		ProdDesc:  ProdDesc}
+		ProdDesc:  ProdDesc,
+		MerchID:   merchID}
 	err = a.db.UpdateProduct(p)
 	if err != nil {
+		fmt.Println(err)
 		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
@@ -156,9 +177,6 @@ func (a *App) delProd(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Session handling to pass in correct merchID
 	err := a.db.DeleteProduct(prodID, "0")
-	if err != nil {
-		log.Fatal(err)
-	}
 	if err != nil {
 		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)

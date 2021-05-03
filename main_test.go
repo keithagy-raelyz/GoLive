@@ -131,14 +131,14 @@ func TestAllProd(t *testing.T) {
 
 func TestGetProd(t *testing.T) {
 	// Product Exists
-	req, err := http.NewRequest(http.MethodGet, "/products/6", nil)
+	req, err := http.NewRequest(http.MethodGet, "/products/5", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
 	checkResponse(t, http.StatusOK, nil, req)
 
 	// Product Does Not Exist
-	req, err = http.NewRequest(http.MethodGet, "/products/100", nil)
+	req, err = http.NewRequest(http.MethodGet, "/products/9999999", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
@@ -172,7 +172,7 @@ func TestPostProd(t *testing.T) {
 	req.Form.Add("Thumbnail", "https://picsum.photos/200")
 	req.Form.Add("Price", "0.05")
 	req.Form.Add("ProdDesc", "Nutritionally like cardboard.")
-	req.Form.Add("MerchID", "6")
+	req.Form.Add("MerchID", "600")
 	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
 
 	// Post product with negative price
@@ -218,16 +218,88 @@ func TestPostProd(t *testing.T) {
 	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
 }
 
-// func TestPutProd (t *testing.T){
-// 	req, err := http.NewRequest(http.MethodPost, "/products", nil)
-// 	if err != nil {
-// 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
-// 	}
-// }
+func TestPutProd(t *testing.T) {
 
-// func TestDelProd (t *testing.T){
+	//Updating with all parameters provided
+	req, err := http.NewRequest(http.MethodPut, "/products/1?Name=something&Quantity=5&Price=4%2E5&ProdDesc=definitely%20something&MerchID=15&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
 
-// }
+	//Updating with wrong productID
+	req, err = http.NewRequest(http.MethodPut, "/products/9000?Name=something&Quantity=5&Price=4%2E0&ProdDesc=definitely%20something&MerchID=15&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	//Updating with wrong merchantID
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Name=something&Quantity=5&Price=40&ProdDesc=definitely%20something&MerchID=5000&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	//Updating with Thumbnail missing
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Name=something&Quantity=5&Price=40&ProdDesc=definitely%20something&MerchID=15", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	//Updating with MerchID missing
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Name=something&Quantity=5&Price=40&ProdDesc=definitely%20something&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	//Updating with ProdDesc missing
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Name=something&Quantity=5&Price=40&MerchID=15&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	//Updating with price missing
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Name=something&Quantity=5&ProdDesc=definitely%20something&MerchID=15&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	//Updating with quantity missing
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Name=something&Price=40&ProdDesc=definitely%20something&MerchID=15&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+
+	//Updating with name missing
+	req, err = http.NewRequest(http.MethodPut, "/products/1?Quantity=5&Price=40&ProdDesc=definitely%20something&MerchID=15&Thumbnail=thumbnail?", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
+}
+
+func TestDelProd(t *testing.T) {
+
+	//Deleting with valid product ID
+	req, err := http.NewRequest(http.MethodDelete, "/products/46", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	//Deleting with invalid product iD
+	req, err = http.NewRequest(http.MethodDelete, "/products/999999", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+}
 
 func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, req *http.Request) {
 	responseRecorder := httptest.NewRecorder()
