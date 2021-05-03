@@ -21,7 +21,9 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Execute some template passing in merchants slice
 	fmt.Println(merchants)
-	return
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("200 - Displaying all merchants"))
 
 }
 
@@ -37,10 +39,6 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	// TODO GetInventory errors need to be multiplexed to differentiate between invalid merchant and empty store
 	inventory, err := a.db.GetInventory(merchID)
 	if err != nil {
-		// Valid merchant ID but no products under merchant ID
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("200 - Valid merchant ID, but store is empty"))
-		// return
 
 		// Invalid merchant ID inputted
 		w.WriteHeader(http.StatusNotFound)
@@ -48,6 +46,12 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if inventory == nil {
+		// Valid merchant ID but no products under merchant ID
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("200 - Valid merchant ID, but store is empty"))
+		return
+	}
 	fmt.Println(inventory)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Valid merchant ID, displaying store"))
@@ -77,28 +81,34 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 	}
 	err := a.db.CheckMerchant(m)
 	if err != nil {
+
+		//check description and pw
+		m.Description = description
+		if pw1 != pw2 {
+			//t.ParseFiles("./templates/errorRegister.html")
+			//data := Data{nil, ErrorMsg{"color:red", "Password entered are different"}, ErrorMsg{"display:none", ""}, ErrorMsg{"display:block", ""}, 0, nil}
+			//t.Execute(w, data)
+			return
+		}
+		err = a.db.CreateMerchant(m, pw1)
+
+		if err != nil {
+			//send the err msg back (err = errmsg)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("400 - Bad Request"))
+			return
+		}
+
 		//send the err msg back (err = errmsg)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad Request"))
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("201 - User Creation Successful"))
 		return
-	}
-	m.Description = description
-	if pw1 != pw2 {
-		//t.ParseFiles("./templates/errorRegister.html")
-		//data := Data{nil, ErrorMsg{"color:red", "Password entered are different"}, ErrorMsg{"display:none", ""}, ErrorMsg{"display:block", ""}, 0, nil}
-		//t.Execute(w, data)
-		return
-	}
-	err = a.db.CreateMerchant(m, pw1)
-	if err != nil {
-		//send the err msg back (err = errmsg)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad Request"))
-		return
+
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("201 - User Creation Successful"))
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte("400 - Bad Request"))
+
 }
 
 // PUT method - Edit existing Merchant (ADMIN ONLY)
@@ -114,17 +124,23 @@ func (a *App) putMerch(w http.ResponseWriter, r *http.Request) {
 	description := r.URL.Query().Get("description")
 	if description == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - no description supplied"))
+		return
 	}
 	username := r.URL.Query().Get("username")
 	if username == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - no username supplied"))
+		return
 	}
 	email := r.URL.Query().Get("email")
 	if email == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - no email supplied"))
+		return
 	}
 	var m db.MerchantUser
 	m.Name = username

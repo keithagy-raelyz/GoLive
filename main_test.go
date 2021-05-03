@@ -37,13 +37,6 @@ func TestAllMerch(t *testing.T) {
 	}
 	checkResponse(t, http.StatusOK, nil, req)
 
-	// Failing case: Get all products at an invalid store
-	req, err = http.NewRequest(http.MethodGet, "/merchants/300", nil)
-	if err != nil {
-		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
-	}
-	checkResponse(t, http.StatusNotFound, nil, req)
-
 	// Passing case: Get some valid product at a valid store
 	// Failing case: Get some invalid product at a valid store
 	// Failing case: Get some valid product at an invalid store
