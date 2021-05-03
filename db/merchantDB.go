@@ -34,7 +34,7 @@ func (d *Database) GetAllMerchants() ([]Merchant, error) {
 }
 
 func (d *Database) GetInventory(merchID string) ([]Product, error) {
-	merchProdsRows, err := d.b.Query("SELECT username, merchants.merchantid, merchants.description, products.ProductID, products.Product_Name, products.Quantity, products.Image, products.price,products.Description from merchants LEFT JOIN products on products.merchantid = merchants.merchantid where merchants.merchantid = ?;", merchID)
+	merchProdsRows, err := d.b.Query("SELECT * from (SELECT username, merchants.merchantid, products.ProductID, products.Product_Name, products.Quantity, products.Image, products.Description from merchants LEFT JOIN products on products.merchantid = merchants.merchantid) AS joinTable WHERE merchantid = 2;", merchID)
 	if err != nil {
 		return []Product{}, err
 	}
