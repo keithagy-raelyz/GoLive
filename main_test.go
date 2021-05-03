@@ -1,20 +1,30 @@
-package main
+package main_test
 
 import (
 	// "database/sql"
 	//"encoding/json"
 	"fmt"
+	"github.com/keithagy-raelyz/GoLive/app"
+	"os"
+
 	// "log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
+var (
+	a *app.App
+)
+
 //
 func TestMain(m *testing.M) {
+	a = &app.App{}
 	a.StartApp()
 	//fmt.Println("Listening at port 5000")
 	//log.Fatal(http.ListenAndServe(":5000", router))
+	code := m.Run()
+	os.Exit(code)
 }
 
 // Tests on Store
@@ -96,6 +106,7 @@ func TestDelMerch(t *testing.T) {
 
 func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, req *http.Request) {
 	responseRecorder := httptest.NewRecorder()
+
 	a.TestRoute(responseRecorder, req)
 	if responseRecorder.Code != targetStatus {
 		t.Errorf(fmt.Sprintf("Expected response code: %d; Got : %d", targetStatus, responseRecorder.Code))
