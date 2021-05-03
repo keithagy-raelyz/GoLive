@@ -1,4 +1,4 @@
-module goLive/GoLive
+module GoLive
 
 go 1.16
 
