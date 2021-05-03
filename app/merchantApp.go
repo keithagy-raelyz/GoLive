@@ -48,7 +48,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404 - No merchant for inputted merchant ID"))
 		return
 	}
-	fmt.Println(inventory)
+	fmt.Println("Inventory for merchID:", merchID, inventory)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Valid merchant ID, displaying store"))
 }
