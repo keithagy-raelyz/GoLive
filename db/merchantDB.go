@@ -1,5 +1,7 @@
 package db
 
+import "fmt"
+
 // MerchantUser has User's account details, with Description of storefront.
 type MerchantUser struct {
 	User
@@ -49,7 +51,7 @@ func (d *Database) GetInventory(merchID string) ([]Product, error) {
 		}
 		merchProds = append(merchProds, p)
 	}
-
+	fmt.Println(merchProdsRows.Err())
 	return merchProds, nil
 }
 
