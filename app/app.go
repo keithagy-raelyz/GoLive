@@ -36,12 +36,12 @@ func (a *App) StartApp() {
 func (a *App) connectDB() {
 	connectionString := fmt.Sprintf("%s:%s@tcp(127.0.0.1:%s)/%s", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	var err error
-	var db = &db.Database{}
+	a.db = &db.Database{}
 	sqlDB, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.InitializeDB(sqlDB)
+	a.db.InitializeDB(sqlDB)
 }
 
 func (a *App) setRoutes() {
