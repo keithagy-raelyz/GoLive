@@ -1,7 +1,5 @@
 package db
 
-import "fmt"
-
 // MerchantUser has User's account details, with Description of storefront.
 type MerchantUser struct {
 	User
@@ -39,7 +37,6 @@ func (d *Database) GetInventory(merchID string) ([]Product, error) {
 		return []Product{}, err
 	}
 	defer merchProdsRows.Close()
-	fmt.Println(merchProdsRows, "42")
 
 	var merchProds []Product
 	var merch = &Merchant{}
@@ -52,7 +49,7 @@ func (d *Database) GetInventory(merchID string) ([]Product, error) {
 		}
 		merchProds = append(merchProds, p)
 	}
-	fmt.Println(merchProds, "line57")
+
 	return merchProds, nil
 }
 
