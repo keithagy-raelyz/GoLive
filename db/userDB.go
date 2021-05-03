@@ -2,28 +2,70 @@ package db
 
 // Information attached to general users.
 type User struct {
-	Id    string
-	Name  string
-	Email string
+	Id       string
+	Name     string
+	Email    string
+	Password string
 }
 
-func (d *Database) getUser(userID string) ([]User, error) {
+func (d *Database) GetUser(userID string) (User, error) {
 	result := d.b.QueryRow("SELECT UserID, Username FROM Users WHERE UserID = ?", userID)
 	var user User
-	err := result.Scan(&user.Id, &user.Name, &user.Email)
-	if err != nil {
-		return []User{}, user.Scan()
-	}
-	defer ProductRows.Close()
 
-	var Products = make([]Product, 0)
-	for ProductRows.Next() {
-		var newProduct Product
-		err = ProductRows.Scan(&newProduct.Name, &newProduct.Id, &newProduct.Description, &newProduct.Thumbnail, &newProduct.Price, &newProduct.Quantity, newProduct.MerchID)
-		if err != nil {
-			return []Product{}, err
-		}
-		Products = append(Products, newProduct)
+	return user, result.Scan(&user.Id, &user.Name, &user.Email)
+
+}
+
+func (d *Database) CreateUser(user User, password string) error {
+	res, err := d.b.Exec("INSERT INTO Users (Username,Password,Email) VALUES (?,?,?)", user.Name, password, user.Email)
+	if err != nil {
+		//TODO return custom error msg
+		return err
 	}
-	return Products, nil
+	rowCount, err := res.RowsAffected()
+	if err != nil || rowCount != 1 {
+		//TODO return custom error msg
+		return err
+	}
+	return nil
+}
+
+func (d *Database) CheckUser(user User) error {
+	var u User
+	err := d.b.QueryRow("SELECT username,email FROM users where Username=? OR email=?", user.Name, user.Email).Scan(u.Name, u.Email)
+	if err != nil {
+		//TODO return custom error msg
+		return err
+	}
+	return nil
+}
+
+func (d *Database) UpdateUser(user User) error {
+	//TODO consider updates to User called by random Curl requests ie no Authentication
+	res, err := d.b.Exec("Update Users set Username=?,Password=?,Email=? where UserID=?", user.Name, user.Password, user.Email, user.Id)
+	if err != nil {
+		//TODO return custom error msg
+		return err
+	}
+	rowCount, err := res.RowsAffected()
+	if err != nil || rowCount != 1 {
+		//TODO return custom error msg
+		return err
+	}
+	return nil
+}
+
+func (d *Database) DeleteUser(userID string) error {
+	//TODO consider delete to User called by random Curl requests ie no Authentication
+	res, err := d.b.Exec("DELETE FROM users where UserID =? ", userID)
+	if err != nil {
+		//TODO return custom error msg
+		return err
+	}
+	rowCount, err := res.RowsAffected()
+	if err != nil || rowCount != 1 {
+		//TODO return custom error msg
+		return err
+	}
+	return nil
 }
