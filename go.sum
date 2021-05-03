@@ -4,5 +4,5 @@ github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
 github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
-github.com/keithagy-raelyz/GoLive v0.0.0-20210503042200-a4b887d50f37 h1:z49fVzrUrX/ZlIBZK9zd48U/u8Nojq6B8zR8YTmkjCQ=
-github.com/keithagy-raelyz/GoLive v0.0.0-20210503042200-a4b887d50f37/go.mod h1:bz+7UpiaaIbnkdaP5yKcQf3Cj+1crfKwuUeyxz7zae4=
+github.com/keithagy-raelyz/GoLive v0.0.0-20210503061224-16dfbba1b189 h1:8GphqDW/nECx4PtHUfYd7yaCZfspyu1e0hl2gkzSW5c=
+github.com/keithagy-raelyz/GoLive v0.0.0-20210503061224-16dfbba1b189/go.mod h1:bz+7UpiaaIbnkdaP5yKcQf3Cj+1crfKwuUeyxz7zae4=
