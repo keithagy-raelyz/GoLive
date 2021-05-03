@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/keithagy-raelyz/GoLive/db"
 )
 
@@ -25,6 +26,7 @@ type Database interface {
 
 // StartApp initializes the application (called by main).
 func (a *App) StartApp() {
+	godotenv.Load()
 	a.connectDB()
 	a.setRoutes()
 	a.startRouter()
@@ -44,6 +46,8 @@ func (a *App) connectDB() {
 
 func (a *App) setRoutes() {
 
+	a.router = mux.NewRouter()
+
 	a.router.HandleFunc("/", home).Methods("GET")
 
 	//Get all Merchants and Products
@@ -62,10 +66,10 @@ func (a *App) setRoutes() {
 	a.router.HandleFunc("/products/{productid}", a.putProd).Methods("PUT")
 	a.router.HandleFunc("/products/{productid}", a.delProd).Methods("DELETE")
 
-	a.router.HandleFunc("/users/{userid}", a.getProd).Methods("GET")
-	a.router.HandleFunc("/users", a.postProd).Methods("POST")
-	a.router.HandleFunc("/users/{userid}", a.putProd).Methods("PUT")
-	a.router.HandleFunc("/users/{userid}", a.delProd).Methods("DELETE")
+	a.router.HandleFunc("/users/{userid}", a.getUser).Methods("GET")
+	a.router.HandleFunc("/users", a.postUser).Methods("POST")
+	a.router.HandleFunc("/users/{userid}", a.putUser).Methods("PUT")
+	a.router.HandleFunc("/users/{userid}", a.delUser).Methods("DELETE")
 }
 
 func (a *App) startRouter() {
