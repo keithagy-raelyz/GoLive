@@ -44,7 +44,7 @@ func TestAllMerch(t *testing.T) {
 }
 
 func TestGetMerch(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "/merchants/1", nil)
+	req, err := http.NewRequest(http.MethodGet, "/merchants/8", nil)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
