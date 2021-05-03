@@ -36,15 +36,14 @@ func (d *Database) GetAllMerchants() ([]Merchant, error) {
 func (d *Database) GetInventory(merchID string) ([]Product, error) {
 	merchProdsRows, err := d.b.Query("SELECT username, merchants.merchantid, merchants.description, products.ProductID, products.Product_Name, products.Quantity, products.Image, products.price,products.Description from merchants LEFT JOIN products on products.merchantid = merchants.merchantid where merchants.merchantid = ?;", merchID)
 	if err != nil {
-		fmt.Println(err, "line39")
-		fmt.Println(merchProdsRows, "line40")
 		return []Product{}, err
 	}
 	defer merchProdsRows.Close()
-
+	fmt.Println(merchProdsRows, "42")
 	var merchProds = make([]Product, 0)
 	var merch = &Merchant{}
 	for merchProdsRows.Next() {
+		fmt.Println("i got called")
 		var p Product
 		// TODO Need to fix so merch only gets scanned ONCE
 		err = merchProdsRows.Scan(&merch.Name, &merch.Id, &merch.Description, &p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.Description)
