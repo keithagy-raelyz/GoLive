@@ -113,6 +113,8 @@ func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, re
 		t.Errorf(fmt.Sprintf("Expected response code: %d; Got : %d", targetStatus, responseRecorder.Code))
 	}
 	// TODO: Revisit with exact type of unmarshaled
+	// Merchant{a,b,c,d}
+	// Response result := Merchant{d,e,f,g}
 	//var unmarshaled interface{}
 	//unmarshaled := json.Unmarshal(responseRecorder.Body)
 	//if unmarshaled != targetPayload {
