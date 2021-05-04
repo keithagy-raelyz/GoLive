@@ -7,6 +7,7 @@ import (
 
 type Database struct {
 	b *sql.DB
+	a *Auth
 }
 
 // Initialize the DB schema
@@ -48,6 +49,17 @@ func (d *Database) InitializeDB(db *sql.DB) {
     PRIMARY KEY (ProductID)
 	);`
 	_, err = d.b.Exec(Query3)
+	if err != nil {
+		log.Fatal(err)
+	}
+	Query4 := `CREATE TABLE IF NOT EXISTS Session (
+    SessionID int NOT NULL AUTO_INCREMENT,
+    Session_Name VARCHAR(255) NOT NULL,
+    UserID int NOT NULL,
+    Foreign Key (UserID) REFERENCES Users (UserID),
+    PRIMARY KEY (SessionID)
+	);`
+	_, err = d.b.Exec(Query4)
 	if err != nil {
 		log.Fatal(err)
 	}

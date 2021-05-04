@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"html/template"
 	"net/http/httptest"
 	"os"
 
@@ -30,7 +31,7 @@ func (a *App) StartApp() {
 	godotenv.Load()
 	a.connectDB()
 	a.setRoutes()
-	//a.startRouter()
+	a.startRouter()
 }
 
 // Helpers for starting application.
@@ -46,13 +47,18 @@ func (a *App) connectDB() {
 }
 
 func (a *App) setRoutes() {
+
 	a.router = mux.NewRouter()
+
+	auth := a.db.InitializeAndGetAuth()
+	a.router.Use(auth.Middleware)
 
 	a.router.HandleFunc("/", home).Methods("GET")
 
 	//Get all Merchants and Products
 	a.router.HandleFunc("/merchants", a.allMerch).Methods("GET")
 	a.router.HandleFunc("/products", a.allProd).Methods("GET")
+	a.router.HandleFunc("/users", a.allUser).Methods("GET")
 
 	//Restful Route for Merchants
 	a.router.HandleFunc("/merchants/{merchantid}", a.getMerch).Methods("GET")
@@ -66,6 +72,7 @@ func (a *App) setRoutes() {
 	a.router.HandleFunc("/products/{productid}", a.putProd).Methods("PUT")
 	a.router.HandleFunc("/products/{productid}", a.delProd).Methods("DELETE")
 
+	//Restful Route for Users
 	a.router.HandleFunc("/users/{userid}", a.getUser).Methods("GET")
 	a.router.HandleFunc("/users", a.postUser).Methods("POST")
 	a.router.HandleFunc("/users/{userid}", a.putUser).Methods("PUT")
@@ -82,5 +89,12 @@ func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Reque
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-
+	t, err := template.ParseGlob("templates/*.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
