@@ -301,6 +301,122 @@ func TestDelProd(t *testing.T) {
 	checkResponse(t, http.StatusOK, nil, req)
 }
 
+func TestAllUsers(t *testing.T) {
+	req, err := http.NewRequest(http.MethodGet, "/users", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+}
+
+func TestGetUser(t *testing.T) {
+	//Get valid UserID
+	req, err := http.NewRequest(http.MethodGet, "/users/1", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	//Get invalid UserID
+	req, err = http.NewRequest(http.MethodGet, "/users/999999", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusNotFound, nil, req)
+}
+
+func TestPostUser(t *testing.T) {
+	// Post new User
+	req, err := http.NewRequest(http.MethodPost, "/users", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Username", "DogShiet")
+	req.Form.Add("Email", "feecalmatter@hotmail.com")
+	req.Form.Add("Pw1", "abc")
+	req.Form.Add("Pw2", "abc")
+	checkResponse(t, http.StatusCreated, nil, req)
+
+	// Post repeated Username
+	req, err = http.NewRequest(http.MethodPost, "/users", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Username", "DogShit")
+	req.Form.Add("Email", "fecalmatters@hotmail.com")
+	req.Form.Add("Pw1", "abc")
+	req.Form.Add("Pw2", "abc")
+	checkResponse(t, http.StatusBadRequest, nil, req)
+
+	// Post repeated Email
+	req, err = http.NewRequest(http.MethodPost, "/users", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Username", "DogShitz")
+	req.Form.Add("Email", "fecalmatter@hotmail.com")
+	req.Form.Add("Pw1", "abc")
+	req.Form.Add("Pw2", "abc")
+	checkResponse(t, http.StatusBadRequest, nil, req)
+
+	// Post mismatch pw
+	req, err = http.NewRequest(http.MethodPost, "/users", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	req.ParseForm()
+	req.Form.Add("Username", "DipShitz")
+	req.Form.Add("Email", "fecalymatter@hotmail.com")
+	req.Form.Add("Pw1", "abcd")
+	req.Form.Add("Pw2", "abc")
+	checkResponse(t, http.StatusBadRequest, nil, req)
+}
+
+func TestPutUser(t *testing.T) {
+
+	//Updating with all parameters provided
+	req, err := http.NewRequest(http.MethodPut, "/users/1?Username=testing&Email=testing90316%40hotmail%2Ecom", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	//Updating with no username
+	req, err = http.NewRequest(http.MethodPut, "/users/1?Email=testing90316%40hotmail%2Ecom", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusBadRequest, nil, req)
+
+	//Updating with no Email
+	req, err = http.NewRequest(http.MethodPut, "/users/1?Username=what", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusBadRequest, nil, req)
+}
+
+func TestDelUser(t *testing.T) {
+
+	//Deleting with valid product ID
+	req, err := http.NewRequest(http.MethodDelete, "/users/1", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+	//Deleting with invalid product iD
+	req, err = http.NewRequest(http.MethodDelete, "/users/999999", nil)
+	if err != nil {
+		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
+	}
+	checkResponse(t, http.StatusOK, nil, req)
+
+}
+
 func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, req *http.Request) {
 	responseRecorder := httptest.NewRecorder()
 

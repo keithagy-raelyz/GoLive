@@ -10,6 +10,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
+
+	users, err := a.db.GetUsers()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(users)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("200 - Get All Users OK"))
+}
+
 func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	// Verify valid merchant ID
@@ -21,28 +33,24 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	var u db.User
 	u, err := a.db.GetUser(userID)
 	if err != nil {
-		// Valid merchant ID but no products under merchant ID
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("200 - Valid merchant ID, but store is empty"))
-		// return
-
+		fmt.Println(err)
 		// Invalid merchant ID inputted
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 - No merchant for inputted merchant ID"))
+		w.Write([]byte("404 - No user for input USERID"))
 		return
 	}
 
-	fmt.Println(u)
+	fmt.Println(u, "printing user")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Valid merchant ID, displaying store"))
 }
 
 func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	username := r.FormValue("username")
-	email := strings.ToLower(r.FormValue("email"))
-	pw1 := r.FormValue("pw1")
-	pw2 := r.FormValue("pw2")
+	username := r.FormValue("Username")
+	email := strings.ToLower(r.FormValue("Email"))
+	pw1 := r.FormValue("Pw1")
+	pw2 := r.FormValue("Pw2")
 
 	var u db.User
 
@@ -59,6 +67,7 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 	err := a.db.CheckUser(u)
 	if err != nil {
 		//send the err msg back (err = errmsg)
+		fmt.Println(err, "CHeckUser error")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 - Bad Request"))
 		return
@@ -67,11 +76,14 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 		//t.ParseFiles("./templates/errorRegister.html")
 		//data := Data{nil, ErrorMsg{"color:red", "Password entered are different"}, ErrorMsg{"display:none", ""}, ErrorMsg{"display:block", ""}, 0, nil}
 		//t.Execute(w, data)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Repeated PW"))
 		return
 	}
 	err = a.db.CreateUser(u, pw1)
 	if err != nil {
 		//send the err msg back (err = errmsg)
+		fmt.Println(err, "createuser error")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 - Bad Request"))
 		return
@@ -90,20 +102,21 @@ func (a *App) putUser(w http.ResponseWriter, r *http.Request) {
 		// TODO display error message serve a proper template redirecting to registry of all merchants
 		return
 	}
-	password := r.URL.Query().Get("password")
-	if password == "" {
-		//TODO proper error handling
-		log.Fatal("no description supplied")
-	}
-	username := r.URL.Query().Get("username")
+
+	username := r.URL.Query().Get("Username")
 	if username == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Username cannot be empty"))
+		return
 	}
-	email := r.URL.Query().Get("email")
+
+	email := r.URL.Query().Get("Email")
 	if email == "" {
 		//TODO proper error handling
-		log.Fatal("no description supplied")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Email cannot be empty"))
+		return
 	}
 	var u db.User
 	u.Name = username
@@ -142,3 +155,26 @@ func (a *App) delUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Deleted Successfully"))
 }
+
+//func (a *App) changeUserPw(w http.ResponseWriter, r *http.Request){
+//	//TODO pw change
+//	pw1:= r.URL.Query().Get("Pw1")
+//	if pw1== "" {
+//		//TODO proper error handling
+//		w.WriteHeader(http.StatusBadRequest)
+//		w.Write([]byte("400 - Password cannot be empty"))
+//		return
+//	}
+//	pw2:= r.URL.Query().Get("Pw2")
+//	if pw2== "" {
+//		//TODO proper error handling
+//		w.WriteHeader(http.StatusBadRequest)
+//		w.Write([]byte("400 - Password cannot be empty"))
+//		return
+//	}
+//	if pw1 != pw2 {
+//		w.WriteHeader(http.StatusBadRequest)
+//		w.Write([]byte("400 - Password must be different"))
+//		return
+//	}
+//}

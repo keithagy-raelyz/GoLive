@@ -1,5 +1,7 @@
 package db
 
+import "errors"
+
 // Information attached to general users.
 type User struct {
 	Id       string
@@ -8,8 +10,26 @@ type User struct {
 	Password string
 }
 
+func (d *Database) GetUsers() ([]User, error) {
+	result, err := d.b.Query("SELECT UserID, Username, Email FROM Users")
+	if err != nil {
+		return []User{}, err
+	}
+	var users []User
+	for result.Next() {
+		var u User
+		err := result.Scan(&u.Id, &u.Name, &u.Email)
+		if err != nil {
+			return []User{}, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+
+}
+
 func (d *Database) GetUser(userID string) (User, error) {
-	result := d.b.QueryRow("SELECT UserID, Username FROM Users WHERE UserID = ?", userID)
+	result := d.b.QueryRow("SELECT UserID, Username, Email FROM Users WHERE UserID = ?", userID)
 	var user User
 
 	return user, result.Scan(&user.Id, &user.Name, &user.Email)
@@ -31,18 +51,21 @@ func (d *Database) CreateUser(user User, password string) error {
 }
 
 func (d *Database) CheckUser(user User) error {
-	var u User
-	err := d.b.QueryRow("SELECT username,email FROM users where Username=? OR email=?", user.Name, user.Email).Scan(u.Name, u.Email)
+
+	res, err := d.b.Query("SELECT username,email FROM users where Username=? OR email=?", user.Name, user.Email)
 	if err != nil {
 		//TODO return custom error msg
 		return err
+	}
+	if res.Next() {
+		return errors.New("User exists")
 	}
 	return nil
 }
 
 func (d *Database) UpdateUser(user User) error {
 	//TODO consider updates to User called by random Curl requests ie no Authentication
-	res, err := d.b.Exec("Update Users set Username=?,Password=?,Email=? where UserID=?", user.Name, user.Password, user.Email, user.Id)
+	res, err := d.b.Exec("Update Users set Username=?,Email=? where UserID=?", user.Name, user.Email, user.Id)
 	if err != nil {
 		//TODO return custom error msg
 		return err
