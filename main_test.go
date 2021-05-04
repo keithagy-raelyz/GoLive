@@ -4,6 +4,7 @@ import (
 	// "database/sql"
 	//"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"GoLive/app"
@@ -120,7 +121,6 @@ func TestDelMerch(t *testing.T) {
 
 // Tests on Product Methods
 // GET Method
-
 func TestAllProd(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "/products", nil)
 	if err != nil {
@@ -301,6 +301,7 @@ func TestDelProd(t *testing.T) {
 	checkResponse(t, http.StatusOK, nil, req)
 }
 
+// User Tests
 func TestAllUsers(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "/users", nil)
 	if err != nil {
@@ -414,8 +415,11 @@ func TestDelUser(t *testing.T) {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
 	checkResponse(t, http.StatusOK, nil, req)
-
 }
+
+// Session Tests
+
+func checkValidation(t *testing.T)
 
 func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, req *http.Request) {
 	responseRecorder := httptest.NewRecorder()
@@ -432,4 +436,26 @@ func checkResponse(t *testing.T, targetStatus int, targetPayload interface{}, re
 	//if unmarshaled != targetPayload {
 	//	t.Errorf(fmt.Sprintf("Expected content: %s; Got : %s", targetPayload, unmarshaled))
 	//}
+}
+
+func NewRequestWithCookie(method string, url string, body io.Reader, cookieValid bool) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	if cookieValid {
+		sessionCookie := &http.Cookie{
+			Name:  "sessionCookie",
+			Value: "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b", // userID 1
+		}
+		secondTest := &http.Cookie{
+			Name:  "i184m",
+			Value: "74dcfbc208bb6aa08c90fb05bda0f2bc53285713e89611dfdd97ae129b5f6195",
+		}
+		req.AddCookie(sessionCookie)
+		req.AddCookie(secondTest)
+		return req, nil
+	}
+	//error url
+	return req, nil
 }
