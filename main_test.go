@@ -20,6 +20,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	// Create a session
 	a = &app.App{}
 	a.StartApp()
 	//fmt.Println("Listening at port 5000")
@@ -450,7 +451,7 @@ func NewRequestWithCookie(method string, url string, body io.Reader, cookieValid
 		}
 		secondTest := &http.Cookie{
 			Name:  "i184m",
-			Value: "74dcfbc208bb6aa08c90fb05bda0f2bc53285713e89611dfdd97ae129b5f6195",
+			Value: "74dcfbc208bb6aa08c90fb05bda0f2bc53285713e89611dfdd97ae129b5f6195", // dogshit
 		}
 		req.AddCookie(sessionCookie)
 		req.AddCookie(secondTest)

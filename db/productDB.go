@@ -13,6 +13,7 @@ type Product struct {
 	Price     float64
 	ProdDesc  string
 	MerchID   string
+	Sales     int // TODO flow change through to app/DB operators
 }
 
 func (d *Database) GetAllProducts() ([]Product, error) {

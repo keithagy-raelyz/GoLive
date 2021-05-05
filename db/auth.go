@@ -79,7 +79,6 @@ func (a *Auth) Middleware(endPoint http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-
 	})
 }
 
