@@ -17,8 +17,32 @@ type CacheManager struct {
 	itemsCache      itemCache       // Populates home page.
 }
 
+// NewCacheManager returns a pointer to an initialized CacheManager.
+func NewCacheManager() *CacheManager {
+	newAuC := activeUserCache{make(map[string]ActiveSession)}
+	newMC := merchantCache{make(map[string]ActiveSession)}
+	newIC := itemCache{make(map[string]ActiveSession), make([]db.Product, 0)}
+
+	newCM := &CacheManager{
+		activeUserCache: newAuC,
+		merchantCache:   newMC,
+		itemsCache:      newIC,
+	}
+
+	return newCM
+}
+
+// NewUserSession takes in required inputs and returns a new UserSession.
+func NewUserSession(sessionKey string, expiry time.Time, user db.User, cart *[]db.Product) *UserSession {
+	return &UserSession{
+		session: session{sessionKey, expiry},
+		owner:   user,
+		cart:    cart,
+	}
+}
+
 //AddtoCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.add() method.
-func (c *CacheManager) AddtoCache(payLoad activeSession) {
+func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 	switch v := payLoad.(type) {
 	case *UserSession:
 		c.activeUserCache.add(v)
@@ -32,7 +56,7 @@ func (c *CacheManager) AddtoCache(payLoad activeSession) {
 }
 
 //GetFromCache identifies the type of the payload before retrieving it from the respective cache by calling on the respective cache.get() method.
-func (c *CacheManager) GetFromCache(key string, cacheType string) (activeSession, bool) {
+func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession, bool) {
 	switch cacheType {
 	case "activeUsers":
 		return c.activeUserCache.get(key)
@@ -47,7 +71,7 @@ func (c *CacheManager) GetFromCache(key string, cacheType string) (activeSession
 }
 
 //RemoveFromCache identifies the type of hte payload before removing it from the respective cache by calling on the respective cache.remove() method.
-func (c *CacheManager) RemoveFromCache(payLoad activeSession) {
+func (c *CacheManager) RemoveFromCache(payLoad ActiveSession) {
 	switch v := payLoad.(type) {
 	case *UserSession:
 		c.activeUserCache.remove(v)
@@ -61,7 +85,7 @@ func (c *CacheManager) RemoveFromCache(payLoad activeSession) {
 }
 
 //UpdateCacheFromDB feeds an array of the payload which is obtained from the latest DB query and calls on the respective cache's cache.update() method.
-func (c *CacheManager) UpdateCacheFromDB(payLoad ...activeSession) {
+func (c *CacheManager) UpdateCacheFromDB(payLoad ...ActiveSession) {
 	switch v := payLoad[0].(type) {
 	case *UserSession:
 		c.activeUserCache.update(v)
@@ -74,8 +98,8 @@ func (c *CacheManager) UpdateCacheFromDB(payLoad ...activeSession) {
 	}
 }
 
-//activeSession interface contains methods to manipulate session Data.
-type activeSession interface {
+//ActiveSession interface contains methods to manipulate session Data.
+type ActiveSession interface {
 	//monitor checks the expiry time.
 	monitor()
 	//getSessionID returns the session's underlying ID.
@@ -84,8 +108,8 @@ type activeSession interface {
 	updateExpiryTime(time.Time)
 }
 
-//session implements the activeSession interface.
-//similarly embedding in any struct type allows the struct to implement the activeSession interface.
+//session implements the ActiveSession interface.
+//similarly embedding in any struct type allows the struct to implement the ActiveSession interface.
 type session struct {
 	key    string
 	expiry time.Time
@@ -136,11 +160,11 @@ type activeUserCache struct {
 }
 
 //cache type is a map that maps the key to an active session
-type cache map[string]activeSession // key: session value; value: see session definition below.
+type cache map[string]ActiveSession // key: session value; value: see session definition below.
 
 //add takes in an active session, checks if the active session already exists in the cache.
 //if it doesn't exist in the cache, add it into the cache and fire off a go tidy() go routine which regulates the session and removes it on expiry.
-func (c *cache) add(payLoad activeSession) {
+func (c *cache) add(payLoad ActiveSession) {
 	key := payLoad.getSessionID()
 	if ok := c.check(key); !ok {
 		(*c)[key] = payLoad
@@ -149,22 +173,22 @@ func (c *cache) add(payLoad activeSession) {
 }
 
 //update flushes the cache with the data obtained from the DB.
-func (c *cache) update(payLoad ...activeSession) {
-	flushedMap := make(map[string]activeSession)
+func (c *cache) update(payLoad ...ActiveSession) {
+	flushedMap := make(map[string]ActiveSession)
 	for _, activeSession := range payLoad {
 		flushedMap[activeSession.getSessionID()] = activeSession
 	}
 	(*c) = flushedMap
 }
 
-//get returns the activeSession stored in the cache given the key.
-func (c *cache) get(key string) (activeSession, bool) {
+//get returns the ActiveSession stored in the cache given the key.
+func (c *cache) get(key string) (ActiveSession, bool) {
 	activeSession, ok := (*c)[key]
 	return activeSession, ok
 }
 
 //tidy calls on monitor which checks if the session has expired. If the session has expired, monitor returns and the session is deleted from the cache.
-func (c *cache) tidy(key string, session activeSession) {
+func (c *cache) tidy(key string, session ActiveSession) {
 	session.monitor()
 	delete(*c, key)
 }
@@ -178,8 +202,8 @@ func (c *cache) check(key string) bool {
 	return ok
 }
 
-//remove deletes the  session given the activeSession.
-func (c *cache) remove(session activeSession) {
+//remove deletes the  session given the ActiveSession.
+func (c *cache) remove(session ActiveSession) {
 	delete(*c, session.getSessionID())
 }
 
@@ -218,8 +242,8 @@ func (i *itemCache) updateSorted() {
 }
 
 //update override the default update method for caches.
-func (i *itemCache) update(payLoad ...activeSession) {
-	flushedMap := make(map[string]activeSession)
+func (i *itemCache) update(payLoad ...ActiveSession) {
+	flushedMap := make(map[string]ActiveSession)
 	for _, activeSession := range payLoad {
 		flushedMap[activeSession.getSessionID()] = activeSession
 	}
