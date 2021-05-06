@@ -132,7 +132,7 @@ func TestAllProd(t *testing.T) {
 
 func TestGetProd(t *testing.T) {
 	// Product Exists
-	req, err := NewRequestWithCookie(http.MethodGet, "/products/5", nil, false)
+	req, err := NewRequestWithCookie(http.MethodGet, "/products/10", nil, false)
 	if err != nil {
 		t.Errorf(fmt.Sprintf("Request generation error: %s", err))
 	}
@@ -173,7 +173,7 @@ func TestPostProd(t *testing.T) {
 	req.Form.Add("Thumbnail", "https://picsum.photos/200")
 	req.Form.Add("Price", "0.05")
 	req.Form.Add("ProdDesc", "Nutritionally like cardboard.")
-	req.Form.Add("MerchID", "5")
+	req.Form.Add("MerchID", "999")
 	checkResponse(t, http.StatusUnprocessableEntity, nil, req)
 
 	// Post product with negative price

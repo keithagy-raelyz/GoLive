@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 
+	"GoLive/cache"
 	"GoLive/db"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -19,11 +20,10 @@ import (
 )
 
 type App struct {
-	router *mux.Router
-	db     *db.Database
-}
-
-type Database interface {
+	router       *mux.Router
+	db           *db.Database
+	cacheManager *cache.CacheManager
+	blacklist    map[string]bool
 }
 
 // StartApp initializes the application (called by main).
@@ -50,8 +50,9 @@ func (a *App) setRoutes() {
 
 	a.router = mux.NewRouter()
 
-	auth := a.db.InitializeAndGetAuth()
-	a.router.Use(auth.Middleware)
+	a.InitializeCacheManager()
+	a.InitializeBlacklist()
+	a.router.Use(a.Middleware)
 
 	a.router.HandleFunc("/", home).Methods("GET")
 

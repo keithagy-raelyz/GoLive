@@ -7,7 +7,6 @@ import (
 
 type Database struct {
 	b *sql.DB
-	a *Auth
 }
 
 // Initialize the DB schema

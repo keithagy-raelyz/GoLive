@@ -48,7 +48,7 @@ func (d *Database) GetProduct(prodID string) (Product, error) {
 func (d *Database) CreateProduct(product Product) error {
 	//TODO think about inserting products that do not belong to the specific merchant, how do ensure integrity of the data created
 	//TODO session stores ID, read from Session take ID from session not from browser
-	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Thumbnail,Price,ProdDesc,MerchantID,Sales) VALUES (?, ?,?, ?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.MerchID, 0)
+	res, err := d.b.Exec("INSERT INTO Products (Product_Name,Quantity,Thumbnail,Price,ProdDesc,MerchantID,Sales) VALUES (?, ?,?, ?,?,?,?)", product.Name, product.Quantity, product.Thumbnail, product.Price, product.ProdDesc, product.MerchID, 0)
 	if err != nil {
 		//TODO return custom error msg
 		return err
@@ -76,7 +76,7 @@ func (d *Database) UpdateProduct(product Product) error {
 	}
 	if rowCount > 1 {
 		//TODO return custom error msg
-		return errors.New("More than 1 row is affected")
+		return errors.New("more than 1 row is affected")
 	}
 	return nil
 }
