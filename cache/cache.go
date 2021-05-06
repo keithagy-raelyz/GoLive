@@ -2,110 +2,232 @@ package cache
 
 import (
 	"GoLive/db"
+	"sort"
 	"time"
 )
 
 const (
-	sessionLife = 30 // default life of active session in minutes
+	sessionLife = 30 // default life of active session in minutes.
 )
 
+//CacheManager stores the various cache types and has CRUD functionality to access the underlying cache methods.
 type CacheManager struct {
-	activeUserCache cache // key: session value; value: see session definition below
-	merchantCache   cache // key: Pointer to cache; value: access frequency
-	featuredItems   cache // Populates home page
+	activeUserCache activeUserCache // key: session value; value: see session definition below.
+	merchantCache   merchantCache   // key: Pointer to cache; value: access frequency.
+	itemsCache      itemCache       // Populates home page.
 }
 
-//
-func (c *CacheManager) AddtoCache(payLoad interface{}) {
+//AddtoCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.add() method.
+func (c *CacheManager) AddtoCache(payLoad activeSession) {
 	switch v := payLoad.(type) {
-	case userSession:
+	case *UserSession:
 		c.activeUserCache.add(v)
-	case merchantSession:
+	case *MerchantSession:
+		c.activeUserCache.add(v)
+	case *cachedMerchant:
 		c.merchantCache.add(v)
-	case db.Product:
-		c.featuredItems.add(v)
+	case *cachedItem:
+		c.itemsCache.add(v)
 	}
 }
 
-type cache interface {
-	add(payload interface{})
-	tidy()
-	check()
-}
-
-type userSession struct { // Cart CRUD tied to methods on this type
-	sessionID           string
-	expiry              time.Time
-	owner               db.User // Owner can be User or a Merchant
-	merchantDescription *string // nil means user, some pointer means merchant
-	cart                *[]db.Product
-}
-
-type userCache map[string]*userSession // key: session value; value: see session definition below
-func (u *userCache) add(payLoad *userSession) {
-	(*u)[payLoad.sessionID] = payLoad
-	go u.tidy(payLoad)
-}
-
-func (u *userCache) tidy(session *userSession) {
-	session.monitor()
-	delete((*u), session.sessionID)
-}
-
-// Validate that session is active, and if active refresh the timestamp
-func (u *userCache) check(sessionID string) bool {
-	userSession, ok := (*u)[sessionID]
-	if ok {
-		userSession.expiry = time.Now().Add(sessionLife * time.Minute)
+//GetFromCache identifies the type of the payload before retrieving it from the respective cache by calling on the respective cache.get() method.
+func (c *CacheManager) GetFromCache(key string, cacheType string) (activeSession, bool) {
+	switch cacheType {
+	case "activeUsers":
+		return c.activeUserCache.get(key)
+	case "activeMerchants":
+		return c.activeUserCache.get(key)
+	case "cachedMerchants":
+		return c.merchantCache.get(key)
+	case "cachedItem":
+		return c.itemsCache.get(key)
 	}
-	return ok
+	return nil, false
 }
 
-func (m *userSession) monitor() {
+//RemoveFromCache identifies the type of hte payload before removing it from the respective cache by calling on the respective cache.remove() method.
+func (c *CacheManager) RemoveFromCache(payLoad activeSession) {
+	switch v := payLoad.(type) {
+	case *UserSession:
+		c.activeUserCache.remove(v)
+	case *MerchantSession:
+		c.activeUserCache.remove(v)
+	case *cachedMerchant:
+		c.merchantCache.remove(v)
+	case *cachedItem:
+		c.itemsCache.remove(v)
+	}
+}
+
+//UpdateCacheFromDB feeds an array of the payload which is obtained from the latest DB query and calls on the respective cache's cache.update() method.
+func (c *CacheManager) UpdateCacheFromDB(payLoad ...activeSession) {
+	switch v := payLoad[0].(type) {
+	case *UserSession:
+		c.activeUserCache.update(v)
+	case *MerchantSession:
+		c.activeUserCache.update(v)
+	case *cachedMerchant:
+		c.merchantCache.remove(v)
+	case *cachedItem:
+		c.itemsCache.remove(v)
+	}
+}
+
+//activeSession interface contains methods to manipulate session Data.
+type activeSession interface {
+	//monitor checks the expiry time.
+	monitor()
+	//getSessionID returns the session's underlying ID.
+	getSessionID() string
+	//updateExpiryTime updates the expiry time when the cache data gets accessed.
+	updateExpiryTime(time.Time)
+}
+
+//session implements the activeSession interface.
+//similarly embedding in any struct type allows the struct to implement the activeSession interface.
+type session struct {
+	key    string
+	expiry time.Time
+}
+
+//getSessionID returns the stored key.
+func (s *session) getSessionID() string {
+	return s.key
+}
+
+//updateExpiryTime updates the session's expiry time.
+func (s *session) updateExpiryTime(updatedTime time.Time) {
+	s.expiry = updatedTime
+}
+
+//monitor sleeps for the difference between the expiration time and the current time.
+//eg expires at 4pm, current time is 4.30pm. it sleeps for 30mins.
+//after sleep ends, it checks if the expiration time has exceeded the current time it returns.
+//or else it loops.
+func (s *session) monitor() {
 	for {
-		sleeptime := m.expiry.Sub(time.Now())
+		sleeptime := s.expiry.Sub(time.Now())
 		time.Sleep(sleeptime)
-		if m.expiry.Before(time.Now()) {
+		if s.expiry.Before(time.Now()) {
 			return
 		}
 	}
 }
 
-type merchantSession struct {
-	sessionID string
-	expiry    time.Time
-	merchant  db.MerchantUser
-	products  *[]db.Product
+//MerchantSession implements the ActiveSession interface by embedding the session struct.
+//stores information about the logged in merchant user.
+type MerchantSession struct {
+	session
+	owner db.MerchantUser
 }
 
-type merchantCache map[*merchantSession]int // key: Pointer to cache; value: access frequency
-func (m *merchantCache) add() {
-
-}
-func (m *merchantCache) tidy() {
-	// TODO Logic for tidying
-
-}
-
-func (m *merchantSession) monitor()
-
-func (m *merchantCache) check() {
-
+//UserSession implements the ActiveSession interface by embedding the session struct.
+//stroes information about the logged in user and his cart data.
+type UserSession struct { // Cart CRUD tied to methods on this type.
+	session
+	owner db.User // Owner can be User or a Merchant.
+	cart  *[]db.Product
 }
 
-type FeaturedItemsSession struct {
-	expiry time.Time
-	item   db.Product
+//activeUserCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
+type activeUserCache struct {
+	cache
 }
 
-type featuredItemsCache []FeaturedItemsSession
+//cache type is a map that maps the key to an active session
+type cache map[string]activeSession // key: session value; value: see session definition below.
 
-func (f *featuredItemsCache) add() {
-
+//add takes in an active session, checks if the active session already exists in the cache.
+//if it doesn't exist in the cache, add it into the cache and fire off a go tidy() go routine which regulates the session and removes it on expiry.
+func (c *cache) add(payLoad activeSession) {
+	key := payLoad.getSessionID()
+	if ok := c.check(key); !ok {
+		(*c)[key] = payLoad
+		go c.tidy(key, payLoad)
+	}
 }
-func (f *featuredItemsCache) tidy() {
-	// TODO Filter most popular recent items based on sales log (we don't have a sales log as yet)
-}
-func (f *featuredItemsCache) check() {
 
+//update flushes the cache with the data obtained from the DB.
+func (c *cache) update(payLoad ...activeSession) {
+	flushedMap := make(map[string]activeSession)
+	for _, activeSession := range payLoad {
+		flushedMap[activeSession.getSessionID()] = activeSession
+	}
+	(*c) = flushedMap
+}
+
+//get returns the activeSession stored in the cache given the key.
+func (c *cache) get(key string) (activeSession, bool) {
+	activeSession, ok := (*c)[key]
+	return activeSession, ok
+}
+
+//tidy calls on monitor which checks if the session has expired. If the session has expired, monitor returns and the session is deleted from the cache.
+func (c *cache) tidy(key string, session activeSession) {
+	session.monitor()
+	delete(*c, key)
+}
+
+// Validate that session is active, and if it is active refresh the timestamp.
+func (c *cache) check(key string) bool {
+	activeSession, ok := (*c)[key]
+	if ok {
+		activeSession.updateExpiryTime(time.Now().Add(sessionLife * time.Minute))
+	}
+	return ok
+}
+
+//remove deletes the  session given the activeSession.
+func (c *cache) remove(session activeSession) {
+	delete(*c, session.getSessionID())
+}
+
+//cachedMerchant stores the merchant details and products.
+type cachedMerchant struct {
+	session
+	merchant db.MerchantUser
+	products *[]db.Product
+	hitRate  int
+}
+
+//merchantCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
+type merchantCache struct {
+	cache
+}
+
+//cachedItem stores the information of a product and its session.
+type cachedItem struct {
+	session
+	item db.Product
+}
+
+//itemCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
+type itemCache struct {
+	cache
+	sorted []db.Product
+}
+
+//UpdateSorted flushes the sorted array with the new data from the DB. It gets called when the cache is flushed.
+func (i *itemCache) updateSorted() {
+	preSort := make([]db.Product, 30)
+	for _, as := range i.cache {
+		preSort = append(preSort, (as.(*cachedItem)).item)
+	}
+	i.sort()
+}
+
+//update override the default update method for caches.
+func (i *itemCache) update(payLoad ...activeSession) {
+	flushedMap := make(map[string]activeSession)
+	for _, activeSession := range payLoad {
+		flushedMap[activeSession.getSessionID()] = activeSession
+	}
+	i.cache = flushedMap
+	i.updateSorted()
+}
+
+//sort sorts the sorted item cache.
+func (i *itemCache) sort() {
+	sort.Slice(i.sorted, func(j, k int) bool { return i.sorted[j].Sales > i.sorted[k].Sales })
 }

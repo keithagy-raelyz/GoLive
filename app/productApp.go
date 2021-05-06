@@ -73,7 +73,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO Session handling to get MerchID
-	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity, MerchID: merchID}
+	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity, MerchID: merchID, Sales: 0}
 	err = a.db.CreateProduct(p)
 	if err != nil {
 		// TODO error handling
@@ -151,7 +151,8 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 		Thumbnail: thumbnail,
 		Price:     price,
 		ProdDesc:  ProdDesc,
-		MerchID:   merchID}
+		MerchID:   merchID,
+	}
 	err = a.db.UpdateProduct(p)
 	if err != nil {
 		fmt.Println(err)

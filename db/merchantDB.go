@@ -32,7 +32,7 @@ func (d *Database) GetAllMerchants() ([]Merchant, error) {
 }
 
 func (d *Database) GetInventory(merchID string) (Merchant, []Product, error) {
-	merchProdsRows, err := d.b.Query("SELECT * from (SELECT username, merchants.merchantid, merchants.MerchDesc, products.ProductID, products.Product_Name, products.Quantity, products.Thumbnail, products.price, products.ProdDesc from merchants LEFT JOIN products on products.merchantid = merchants.merchantid) AS joinTable WHERE merchantid = ?;", merchID)
+	merchProdsRows, err := d.b.Query("SELECT * from (SELECT username, merchants.merchantid, merchants.MerchDesc, products.ProductID, products.Product_Name, products.Quantity, products.Thumbnail, products.price, products.ProdDesc, products.Sales from merchants LEFT JOIN products on products.merchantid = merchants.merchantid) AS joinTable WHERE merchantid = ?;", merchID)
 	if err != nil {
 		// fmt.Println("Query error", err)
 		return Merchant{}, []Product{}, err
@@ -44,7 +44,7 @@ func (d *Database) GetInventory(merchID string) (Merchant, []Product, error) {
 	for merchProdsRows.Next() {
 		var p Product
 		// TODO Need to fix so merch only gets scanned ONCE
-		err = merchProdsRows.Scan(&merch.Name, &merch.Id, &merch.MerchDesc, &p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.ProdDesc)
+		err = merchProdsRows.Scan(&merch.Name, &merch.Id, &merch.MerchDesc, &p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.ProdDesc, &p.Sales)
 		if err != nil {
 			// fmt.Println("Scan error", err)
 			return merch, merchProds, err
