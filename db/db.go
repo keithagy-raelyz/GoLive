@@ -45,6 +45,7 @@ func (d *Database) InitializeDB(db *sql.DB) {
     Price float not null,
     ProdDesc VARCHAR(255),
     MerchantID int NOT NULL,
+    Sales int,
     Foreign Key (MerchantID) REFERENCES Merchants (MerchantID),
     PRIMARY KEY (ProductID)
 	);`

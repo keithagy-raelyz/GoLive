@@ -17,6 +17,7 @@ func (d *Database) InitializeAndGetAuth() *Auth {
 		session:   make(map[string]string),
 		blacklist: make(map[string]bool),
 	}
+	d.a.session["6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"] = "74dcfbc208bb6aa08c90fb05bda0f2bc53285713e89611dfdd97ae129b5f6195"
 	d.a.blacklist["/cart"] = true
 	d.a.blacklist["/checkout"] = true
 	d.a.blacklist["/users"] = true
@@ -26,11 +27,15 @@ func (d *Database) InitializeAndGetAuth() *Auth {
 
 func (a *Auth) InBlacklist(r *http.Request) bool {
 	url := r.URL.String()
+	if url == "/users" && r.Method == http.MethodPost {
+		return false
+	}
 	urlSplit := strings.Split(url, "/")
 	url = "/" + urlSplit[1]
 	fmt.Println("url:", url)
 
 	_, ok := a.blacklist[url]
+
 	return ok
 }
 

@@ -31,7 +31,7 @@ func (a *App) StartApp() {
 	godotenv.Load()
 	a.connectDB()
 	a.setRoutes()
-	a.startRouter()
+	//a.startRouter()
 }
 
 // Helpers for starting application.
