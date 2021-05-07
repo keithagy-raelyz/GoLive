@@ -83,11 +83,11 @@ func (a *App) UpdateSession(activeSession cache.ActiveSession, cart *[]db.Produc
 	if cart == nil {
 		// MerchantSession or UserSession page navigation, extend expiry by standard session life
 		// a.cacheManager.UpdateCache()
-		activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
+		//activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
 	} else {
 		// UserSession adding product to cart, update expiry by standard session life and update cart
-		activeSession.(*cache.UserSession).UpdateCart(cart)
-		activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
+		//activeSession.(*cache.UserSession).UpdateCart(cart)
+		//activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
 	}
 }
 

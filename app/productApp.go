@@ -67,6 +67,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if price <= 0 || quantity < 0 || ProdDesc == "" || name == "" {
+
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid Price and/or Quantity submitted"))
 		return
@@ -77,6 +78,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	err = a.db.CreateProduct(p)
 	if err != nil {
 		// TODO error handling
+		fmt.Println(err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Merchant ID provided is Invalid"))
 		return
