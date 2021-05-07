@@ -15,10 +15,10 @@ func (a *App) InitializeCacheManager() {
 		"6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
 		time.Now().Add(30*time.Minute),
 		db.User{
-			"4",
-			"DogShiet",
-			"feecalmatter@hotmail.com",
-			"abc"},
+			Id:       "4",
+			Name:     "DogShiet",
+			Email:    "feecalmatter@hotmail.com",
+			Password: "abc"},
 		&[]db.Product{})
 	a.cacheManager.AddtoCache(dummyUserSession)
 }
@@ -66,15 +66,20 @@ func (a *App) Middleware(endPoint http.Handler) http.Handler {
 // 	// TODO Validation
 // }
 
-// 
-func (a *App) ManageSession(session *ActiveSession, cart *[]db.Product) {
-	if cart == nil{
-		// MerchantSession, update expiry
-		a.
+// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
+func (a *App) UpdateSession(activeSession cache.ActiveSession, cart *[]db.Product) {
+	if cart == nil {
+		// MerchantSession or UserSession page navigation, extend expiry by standard session life
+		// a.cacheManager.UpdateCache()
+		activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
+	} else {
+		// UserSession adding product to cart, update expiry by standard session life and update cart
+		activeSession.(*cache.UserSession).UpdateCart(cart)
+		activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
 	}
-
 }
 
-func (a *App) UpdateSession() {
+// DeleteSession is called upon logout
+func (a *App) DeleteSession(session cache.ActiveSession) {
 
 }
