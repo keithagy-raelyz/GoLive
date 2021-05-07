@@ -1,14 +1,92 @@
 package app
 
 import (
+	"GoLive/cache"
 	"GoLive/db"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
 )
+
+func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
+	// Check session; if already logged in then redirect to home page
+	if _, alreadyLoggedIn := a.HaveValidSessionCookie(r); alreadyLoggedIn {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	// ExecuteTemplate
+	http.ExecuteTemplate()
+}
+
+func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	// Need to hash password
+
+	foundUser, err := a.db.GetUserCredentials(username)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("403 - Invalid Login Credentials"))
+		return
+	}
+	if correct := PWcompare(password, foundUser.Password); !correct {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("403 - Invalid Login Credentials"))
+		return
+	}
+
+	newsessionKey := uuid.NewV4().String()
+	newsession := cache.NewUserSession(
+		newsessionKey,
+		time.Now().Add(cache.SessionLife),
+		db.User{foundUser.ID, foundUser.Name, foundUser.Email, ""},
+		nil)
+	a.cacheManager.AddtoCache(newsession)
+}
+
+func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	// Need to hash password
+
+	foundMerch, err := a.db.GetMerchCredentials(username)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("403 - Invalid Login Credentials"))
+		return
+	}
+	if correct := PWcompare(password, foundMerch.User.Password); !correct {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("403 - Invalid Login Credentials"))
+		return
+	}
+
+	newsessionKey := uuid.NewV4().String()
+	newsession := cache.NewMerchSession(
+		newsessionKey,
+		time.Now().Add(cache.SessionLife),
+		db.User{userID, username, email, ""}, // Needs to be MerchantUser
+		nil)
+	a.cacheManager.AddtoCache(newsession)
+}
+
+func (a *App) logout(w http.ResponseWriter, r *http.Request) {
+	sessionKey, err := r.Cookie("sessionCookie")
+	sessionKeyVal := sessionKey.String()
+	if err != nil {
+		// No Session Cookie
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	a.cacheManager.RemoveFromCache(sessionKeyVal)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return
+}
 
 func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
 

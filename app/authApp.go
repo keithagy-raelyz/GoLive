@@ -51,20 +51,32 @@ func (a *App) Middleware(endPoint http.Handler) http.Handler {
 		if !a.NeedSessionCookie(r) {
 			endPoint.ServeHTTP(w, r)
 			return
+		} else {
+			if _, found := a.HaveValidSessionCookie(r); found {
+				endPoint.ServeHTTP(w, r)
+				return
+			}
 		}
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 	})
 }
 
-// func (a *App) HaveValidSessionCookie(w *http.ResponseWriter, r *http.Request) (*cache.ActiveSession, bool) {
-// 	// Get session cookie
-// 	sessionValue, err := r.Cookie("sessionCookie")
-// 	if err != nil {
-// 		// No Session Cookie
-// 		return nil, false
-// 	}
-// 	// TODO Validation
-// }
+func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool) {
+	// Get session cookie
+	sessionValue, err := r.Cookie("sessionCookie")
+	if err != nil {
+		// No Session Cookie
+		return nil, false
+	}
+	sessionValStr := sessionValue.String()
+	session, found := a.cacheManager.GetFromCache(sessionValStr, "activeUsers")
+	if !found {
+		session, found = a.cacheManager.GetFromCache(sessionValStr, "activeMerchants")
+	}
+	return session, found
+}
+
+// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
 
 // UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
 func (a *App) UpdateSession(activeSession cache.ActiveSession, cart *[]db.Product) {

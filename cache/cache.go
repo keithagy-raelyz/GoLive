@@ -57,17 +57,15 @@ func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 
 //UpdateCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.updateExpiryTime() method.
 // In the case of a user updating their cart, UpdateCache also updates the respective product cart.
-func (c *CacheManager) UpdateCache(activeSession ActiveSession, cart *db.Product) {
-	switch v := activeSession.(type) {
+func (c *CacheManager) UpdateCache(activeSession ActiveSession, cart *[]db.Product) {
+	activeSession.updateExpiryTime(time.Now().Add(SessionLife * time.Minute))
+	switch activeSession.(type) {
 	case *UserSession:
-		sessionID := activeSession.getSessionID()
-		c.activeUserCache.
-	case *MerchantSession:
-		c.activeUserCache.add(v)
-	case *cachedMerchant:
-		c.merchantCache.add(v)
-	case *cachedItem:
-		c.itemsCache.add(v)
+		if cart != nil {
+			sessionID := activeSession.getSessionID()
+			sessionToUpdate := (c.activeUserCache.cache)[sessionID]
+			sessionToUpdate.(*UserSession).updateCart(cart)
+		}
 	}
 }
 
@@ -87,7 +85,7 @@ func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession
 }
 
 //RemoveFromCache identifies the type of hte payload before removing it from the respective cache by calling on the respective cache.remove() method.
-func (c *CacheManager) RemoveFromCache(payLoad ActiveSession) {
+func (c *CacheManager) RemoveFromCache(session string) {
 	switch v := payLoad.(type) {
 	case *UserSession:
 		c.activeUserCache.remove(v)
@@ -120,8 +118,8 @@ type ActiveSession interface {
 	monitor()
 	//getSessionID returns the session's underlying ID.
 	getSessionID() string
-	//UpdateExpiryTime updates the expiry time when the cache data gets accessed.
-	UpdateExpiryTime(time.Time)
+	//updateExpiryTime updates the expiry time when the cache data gets accessed.
+	updateExpiryTime(time.Time)
 }
 
 //session implements the ActiveSession interface.
@@ -131,35 +129,35 @@ type session struct {
 	expiry time.Time
 }
 
-//MerchantSession implements the ActiveSession interface by embedding the session struct.
-//stores information about the logged in merchant user.
-type MerchantSession struct {
-	session
-	owner db.MerchantUser
-}
-
 //monitor sleeps for the difference between the expiration time and the current time.
 //eg expires at 4pm, current time is 4.30pm. it sleeps for 30mins.
 //after sleep ends, it checks if the expiration time has exceeded the current time it returns.
 //or else it loops.
-func (m *MerchantSession) monitor() {
+func (s *session) monitor() {
 	for {
-		sleeptime := time.Until(m.session.expiry)
+		sleeptime := time.Until(s.expiry)
 		time.Sleep(sleeptime)
-		if m.session.expiry.Before(time.Now()) {
+		if s.expiry.Before(time.Now()) {
 			return
 		}
 	}
 }
 
 //getSessionID returns the stored key.
-func (m *MerchantSession) getSessionID() string {
-	return m.session.key
+func (s *session) getSessionID() string {
+	return s.key
 }
 
-//UpdateExpiryTime updates the session's expiry time.
-func (m *MerchantSession) UpdateExpiryTime(updatedTime time.Time) {
-	m.session.expiry = updatedTime
+//updateExpiryTime updates the session's expiry time.
+func (s *session) updateExpiryTime(updatedTime time.Time) {
+	s.expiry = updatedTime
+}
+
+//MerchantSession implements the ActiveSession interface by embedding the session struct.
+//stores information about the logged in merchant user.
+type MerchantSession struct {
+	session
+	owner db.MerchantUser
 }
 
 //UserSession implements the ActiveSession interface by embedding the session struct.
@@ -170,32 +168,8 @@ type UserSession struct { // Cart CRUD tied to methods on this type.
 	cart  *[]db.Product
 }
 
-//monitor sleeps for the difference between the expiration time and the current time.
-//eg expires at 4pm, current time is 4.30pm. it sleeps for 30mins.
-//after sleep ends, it checks if the expiration time has exceeded the current time it returns.
-//or else it loops.
-func (u *UserSession) monitor() {
-	for {
-		sleeptime := time.Until(u.session.expiry)
-		time.Sleep(sleeptime)
-		if u.session.expiry.Before(time.Now()) {
-			return
-		}
-	}
-}
-
-//getSessionID returns the stored key.
-func (u *UserSession) getSessionID() string {
-	return u.session.key
-}
-
-//UpdateExpiryTime updates the session's expiry time.
-func (u *UserSession) UpdateExpiryTime(updatedTime time.Time) {
-	u.session.expiry = updatedTime
-}
-
 // UpdateCart updates the session's cart.
-func (u *UserSession) UpdateCart(cart *[]db.Product) {
+func (u *UserSession) updateCart(cart *[]db.Product) {
 	u.cart = cart
 }
 
@@ -242,7 +216,7 @@ func (c *cache) tidy(key string, session ActiveSession) {
 func (c *cache) check(key string) bool {
 	activeSession, ok := (*c)[key]
 	if ok {
-		activeSession.UpdateExpiryTime(time.Now().Add(SessionLife * time.Minute))
+		activeSession.updateExpiryTime(time.Now().Add(SessionLife * time.Minute))
 	}
 	return ok
 }
@@ -260,30 +234,6 @@ type cachedMerchant struct {
 	hitRate  int
 }
 
-//monitor sleeps for the difference between the expiration time and the current time.
-//eg expires at 4pm, current time is 4.30pm. it sleeps for 30mins.
-//after sleep ends, it checks if the expiration time has exceeded the current time it returns.
-//or else it loops.
-func (c *cachedMerchant) monitor() {
-	for {
-		sleeptime := time.Until(c.session.expiry)
-		time.Sleep(sleeptime)
-		if c.session.expiry.Before(time.Now()) {
-			return
-		}
-	}
-}
-
-//getSessionID returns the stored key.
-func (c *cachedMerchant) getSessionID() string {
-	return c.session.key
-}
-
-//UpdateExpiryTime updates the session's expiry time.
-func (c *cachedMerchant) UpdateExpiryTime(updatedTime time.Time) {
-	c.session.expiry = updatedTime
-}
-
 //merchantCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
 type merchantCache struct {
 	cache
@@ -293,30 +243,6 @@ type merchantCache struct {
 type cachedItem struct {
 	session
 	item db.Product
-}
-
-//monitor sleeps for the difference between the expiration time and the current time.
-//eg expires at 4pm, current time is 4.30pm. it sleeps for 30mins.
-//after sleep ends, it checks if the expiration time has exceeded the current time it returns.
-//or else it loops.
-func (c *cachedItem) monitor() {
-	for {
-		sleeptime := time.Until(c.session.expiry)
-		time.Sleep(sleeptime)
-		if c.session.expiry.Before(time.Now()) {
-			return
-		}
-	}
-}
-
-//getSessionID returns the stored key.
-func (c *cachedItem) getSessionID() string {
-	return c.session.key
-}
-
-//UpdateExpiryTime updates the session's expiry time.
-func (c *cachedItem) UpdateExpiryTime(updatedTime time.Time) {
-	c.session.expiry = updatedTime
 }
 
 //itemCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.

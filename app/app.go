@@ -57,9 +57,10 @@ func (a *App) setRoutes() {
 	a.router.HandleFunc("/", home).Methods("GET")
 
 	// Login Page
-	a.router.HandleFunc("/login", a.allMerch).Methods("GET")    // Display Login Page
-	a.router.HandleFunc("/login", a.allMerch).Methods("POST")   // Begin Validation
-	a.router.HandleFunc("/login", a.allMerch).Methods("DELETE") // Delete session i.e logout
+	a.router.HandleFunc("/login", a.displayLogin).Methods("GET")                    // Display Login Page
+	a.router.HandleFunc("/login/user", a.validateUserLogin).Methods("POST")         // Begin User Validation
+	a.router.HandleFunc("/login/merchant", a.validateMerchantLogin).Methods("POST") // Begin Merchant Validation
+	a.router.HandleFunc("/login", a.logout).Methods("DELETE")                       // Delete session i.e logout
 
 	// //Authentication
 	// a.router.HandleFunc("/sessions", a.allMerch).Methods("GET") // ADMIN ONLY view/delete active sessions
