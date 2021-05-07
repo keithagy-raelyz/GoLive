@@ -4,13 +4,13 @@ import (
 	"GoLive/cache"
 	"GoLive/db"
 	"fmt"
+	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
+	"html/template"
 	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
 )
 
 func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +20,14 @@ func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// ExecuteTemplate
-	http.ExecuteTemplate()
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +35,7 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	// Need to hash password
 
-	foundUser, err := a.db.GetUserCredentials(username)
+	foundUser, err := a.db.GetUser(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("403 - Invalid Login Credentials"))
@@ -44,7 +51,7 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 	newsession := cache.NewUserSession(
 		newsessionKey,
 		time.Now().Add(cache.SessionLife),
-		db.User{foundUser.ID, foundUser.Name, foundUser.Email, ""},
+		foundUser,
 		nil)
 	a.cacheManager.AddtoCache(newsession)
 }
@@ -54,7 +61,7 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	// Need to hash password
 
-	foundMerch, err := a.db.GetMerchCredentials(username)
+	foundMerch, err := a.db.GetMerchant(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("403 - Invalid Login Credentials"))
@@ -67,11 +74,9 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newsessionKey := uuid.NewV4().String()
-	newsession := cache.NewMerchSession(
-		newsessionKey,
+	newsession := cache.NewMerchSession(newsessionKey,
 		time.Now().Add(cache.SessionLife),
-		db.User{userID, username, email, ""}, // Needs to be MerchantUser
-		nil)
+		foundMerch)
 	a.cacheManager.AddtoCache(newsession)
 }
 

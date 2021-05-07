@@ -28,11 +28,11 @@ func (d *Database) GetUsers() ([]User, error) {
 
 }
 
-func (d *Database) GetUser(userID string) (User, error) {
-	result := d.b.QueryRow("SELECT UserID, Username, Email FROM Users WHERE UserID = ?", userID)
+func (d *Database) GetUser(username string) (User, error) {
+	result := d.b.QueryRow("SELECT * FROM Users WHERE UserID = ?", username)
 	var user User
 
-	return user, result.Scan(&user.Id, &user.Name, &user.Email)
+	return user, result.Scan(&user.Id, &user.Name, &user.Password, &user.Email)
 
 }
 

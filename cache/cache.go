@@ -41,6 +41,14 @@ func NewUserSession(sessionKey string, expiry time.Time, user db.User, cart *[]d
 	}
 }
 
+// NewMerchantSession takes in required inputs and returns a new MerchantSession
+func NewMerchSession(sessionKey string, expiry time.Time, user db.MerchantUser) *MerchantSession {
+	return &MerchantSession{
+		session: session{sessionKey, expiry},
+		owner:   user,
+	}
+}
+
 //AddtoCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.add() method.
 func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 	switch v := payLoad.(type) {
@@ -188,6 +196,8 @@ func (c *cache) add(payLoad ActiveSession) {
 	if ok := c.check(key); !ok {
 		(*c)[key] = payLoad
 		go c.tidy(key, payLoad)
+	} else {
+
 	}
 }
 

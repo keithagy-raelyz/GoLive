@@ -31,7 +31,7 @@ func (a *App) StartApp() {
 	godotenv.Load()
 	a.connectDB()
 	a.setRoutes()
-	//a.startRouter()
+	a.startRouter()
 }
 
 // Helpers for starting application.
@@ -55,6 +55,7 @@ func (a *App) setRoutes() {
 	a.router.Use(a.Middleware)
 
 	a.router.HandleFunc("/", home).Methods("GET")
+	a.router.HandleFunc("/logintest", home2).Methods("GET")
 
 	// Login Page
 	a.router.HandleFunc("/login", a.displayLogin).Methods("GET")                    // Display Login Page
@@ -114,7 +115,7 @@ func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Reque
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseGlob("templates/*.html")
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,4 +123,22 @@ func home(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func home2(w http.ResponseWriter, r *http.Request) {
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(w, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func PWcompare(sessionPW string, cachedPW string) bool {
+	if sessionPW == cachedPW {
+		return true
+	}
+	return false
 }

@@ -120,3 +120,13 @@ func (d *Database) DeleteMerchant(merchID string) error {
 	}
 	return nil
 }
+
+func (d *Database) GetMerchant(username string) (MerchantUser, error) {
+	var m MerchantUser
+	err := d.b.QueryRow("SELECT * FROM merchants where Username=?", username).Scan(&m.Id, &m.User, &m.Password, &m.Email, &m.MerchDesc)
+	if err != nil {
+		//TODO return custom error msg
+		return m, err
+	}
+	return m, nil
+}
