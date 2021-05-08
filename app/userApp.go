@@ -13,7 +13,13 @@ import (
 	"time"
 )
 
-type ErrorT struct {
+type Data struct {
+	User     db.User
+	Merchant db.MerchantUser
+	Error    Error
+	Products []db.Product
+}
+type Error struct {
 	ErrMsg string
 }
 
@@ -28,8 +34,8 @@ func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = t.Execute(w, nil)
+	data := Data{}
+	err = t.Execute(w, data)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,15 +46,17 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	// Need to hash password
 	fmt.Println(username)
+	fmt.Println(password)
 	foundUser, err := a.db.GetUser(username)
 	if err != nil {
+		fmt.Println(err, "error in get user")
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
 		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
 		if err != nil {
 			log.Fatal(err)
 		}
-		data := ErrorT{ErrMsg: "Test"}
+		data := Data{Error: Error{"Piece of shit who can't even remember your password / username"}}
 		err = t.Execute(w, data)
 		if err != nil {
 			log.Fatal(err)
@@ -56,13 +64,14 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if correct := PWcompare(password, foundUser.Password); !correct {
+		fmt.Println(foundUser.Password, "not correct")
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
 		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
 		if err != nil {
 			log.Fatal(err)
 		}
-		data := ErrorT{ErrMsg: "Test"}
+		data := Data{Error: Error{"Piece of shit who can't even remember your password / username"}}
 		err = t.Execute(w, data)
 		if err != nil {
 			log.Fatal(err)
@@ -82,10 +91,11 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	data := struct{ User db.User }{foundUser}
+	p, _ := a.db.GetAllProducts()
+	data := Data{User: foundUser, Products: p}
 	err = t.Execute(w, data)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
 

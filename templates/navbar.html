@@ -1,4 +1,5 @@
 {{define "navbar"}}
+{{$id := .Id}}
     <nav class="site-header sticky-top py-1">
         <div class="container d-flex flex-column flex-md-row justify-content-between">
             <a class="py-2" href="#">
@@ -12,8 +13,8 @@
             <a class="py-2 d-none d-md-inline-block" href="#">Pricing</a>
             <a class="py-2 d-none d-md-inline-block" href="#">Cart</a>
 
-            {{if not .Name}}
-            <a class="py-2 d-none d-md-inline-block" href="/user">{{.Name}}</a>
+            {{with .Name}}
+            <a class="py-2 d-none d-md-inline-block" href="/users/{{$id}}">{{.}}</a>
             {{else}}
             <a class="py-2 d-none d-md-inline-block" href="/login">Login</a>
             {{end}}

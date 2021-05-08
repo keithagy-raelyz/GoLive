@@ -54,7 +54,7 @@ func (a *App) setRoutes() {
 	a.InitializeBlacklist()
 	a.router.Use(a.Middleware)
 
-	a.router.HandleFunc("/", home).Methods("GET")
+	a.router.HandleFunc("/", a.home).Methods("GET")
 
 	// Login Page
 	a.router.HandleFunc("/login", a.displayLogin).Methods("GET")                    // Display Login Page
@@ -113,14 +113,18 @@ func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Reque
 	a.router.ServeHTTP(recorder, request)
 }
 
-func home(w http.ResponseWriter, r *http.Request) {
+func (a *App) home(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = t.Execute(w, nil)
+	p, _ := a.db.GetAllProducts()
+	data := Data{
+		Products: p,
+	}
+	err = t.Execute(w, data)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
 

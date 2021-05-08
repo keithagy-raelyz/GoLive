@@ -1,4 +1,4 @@
-{{define "body"}}
+{{define "loginBody"}}
 <div>
     <input type="checkbox" id="toggleContainer">
     <div class="userContainer">
@@ -9,9 +9,10 @@
                 <label id="psuedoLink" for="toggleContainer">Click here for Merchant Login</label>
             </div>
         </section>
-        {{if $.ErrMsg}}
-        <p>{{$.ErrMsg}}</p>
+        {{with .ErrMsg}}
+        <p style="color:red;font-size: larger">{{.}}</p>
         {{end}}
+
         {{template "error"}}
         <div class="main login" style="padding:0px 20px 200px 300px;margin-left: 20%">
             <div class="col-md-6 col-sm-12">
