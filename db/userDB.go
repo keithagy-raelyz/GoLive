@@ -29,7 +29,7 @@ func (d *Database) GetUsers() ([]User, error) {
 }
 
 func (d *Database) GetUser(username string) (User, error) {
-	result := d.b.QueryRow("SELECT * FROM Users WHERE UserID = ?", username)
+	result := d.b.QueryRow("SELECT * FROM Users WHERE Username = ?", username)
 	var user User
 
 	return user, result.Scan(&user.Id, &user.Name, &user.Password, &user.Email)

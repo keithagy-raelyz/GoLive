@@ -60,6 +60,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
+	//TODO get merchID from cookie/session instead safer
 	merchID := r.FormValue("MerchID")
 	if err != nil {
 		// TODO error handling

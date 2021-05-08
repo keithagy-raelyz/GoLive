@@ -1,0 +1,36 @@
+{{define "updateProduct"}}
+<div class="main" style="padding:0px 20px 200px 300px;margin-left: 20%">
+  <div class="col-md-6 col-sm-12">
+    <div class="login-form" style="margin-top:30%">
+      <form class="formbox" method="POST" action="/products">
+        <div class="form-group">
+          <input name="Id" type="hidden" class="form-control" placeholder="Product Name" value=".Id">
+        </div>
+        <div class="form-group">
+          <label>Product Name</label>
+          <input name="Name" type="text" class="form-control" placeholder="Product Name" value=".Name">
+        </div>
+        <div class="form-group">
+          <label>Quantity</label>
+          <input name="Quantity" type="number" class="form-control" placeholder="Quantity" value=".Quantity">
+        </div>
+        <div class="form-group">
+          <label>Thumbnail</label>
+          <input name="Thumbnail" type="text" class="form-control" placeholder="Thumbnail" value=".Thumbnail">
+        </div>
+        <div class="form-group">
+          <label>Price</label>
+          <input name="Price" type="number" class="form-control" placeholder="Price" value=".Price">
+        </div>
+        <div class="form-group">
+          <label>Product Description</label>
+          <input name="ProdDesc" type="text" class="form-control" placeholder="Product Description" value=".ProdDesc">
+        </div>
+
+        <button type="submit" class="btn btn-black">Submit</button>
+
+      </form>
+    </div>
+  </div>
+</div>
+{{end}}
