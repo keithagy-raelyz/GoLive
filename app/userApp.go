@@ -83,12 +83,15 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	sessionKey, err := r.Cookie("sessionCookie")
 	sessionKeyVal := sessionKey.String()
+	params := mux.Vars(r)
+	// Verify valid user type
+	userType := params["type"]
 	if err != nil {
 		// No Session Cookie
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	a.cacheManager.RemoveFromCache(sessionKeyVal)
+	a.cacheManager.RemoveFromCache(sessionKeyVal, userType)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return
 }

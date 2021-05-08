@@ -65,15 +65,16 @@ func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 
 //UpdateCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.updateExpiryTime() method.
 // In the case of a user updating their cart, UpdateCache also updates the respective product cart.
-func (c *CacheManager) UpdateCache(activeSession ActiveSession, cart *[]db.Product) {
-	activeSession.updateExpiryTime(time.Now().Add(SessionLife * time.Minute))
-	switch activeSession.(type) {
-	case *UserSession:
-		if cart != nil {
-			sessionID := activeSession.getSessionID()
-			sessionToUpdate := (c.activeUserCache.cache)[sessionID]
-			sessionToUpdate.(*UserSession).updateCart(cart)
-		}
+func (c *CacheManager) UpdateCache(key string, cacheType string, cart *[]db.Product) {
+	switch cacheType {
+	case "activeUsers":
+		c.activeUserCache.update(key, cart)
+	case "activeMerchants":
+		c.activeUserCache.update(key, nil)
+	case "cachedMerchants":
+		c.activeUserCache.update(key, nil)
+	case "cachedItem":
+		c.activeUserCache.update(key, nil)
 	}
 }
 
@@ -93,30 +94,31 @@ func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession
 }
 
 //RemoveFromCache identifies the type of hte payload before removing it from the respective cache by calling on the respective cache.remove() method.
-func (c *CacheManager) RemoveFromCache(session string) {
-	switch v := payLoad.(type) {
-	case *UserSession:
-		c.activeUserCache.remove(v)
-	case *MerchantSession:
-		c.activeUserCache.remove(v)
-	case *cachedMerchant:
-		c.merchantCache.remove(v)
-	case *cachedItem:
-		c.itemsCache.remove(v)
+func (c *CacheManager) RemoveFromCache(key string, cacheType string) {
+	switch cacheType {
+	case "activeUsers":
+		c.activeUserCache.remove(key)
+	case "activeMerchants":
+		c.activeUserCache.remove(key)
+	case "cachedMerchants":
+		c.merchantCache.remove(key)
+	case "cachedItem":
+		c.itemsCache.remove(key)
 	}
+
 }
 
 //UpdateCacheFromDB feeds an array of the payload which is obtained from the latest DB query and calls on the respective cache's cache.update() method.
 func (c *CacheManager) UpdateCacheFromDB(payLoad ...ActiveSession) {
 	switch v := payLoad[0].(type) {
 	case *UserSession:
-		c.activeUserCache.update(v)
+		c.activeUserCache.refresh(v)
 	case *MerchantSession:
-		c.activeUserCache.update(v)
+		c.activeUserCache.refresh(v)
 	case *cachedMerchant:
-		c.merchantCache.remove(v)
+		c.merchantCache.refresh(v)
 	case *cachedItem:
-		c.itemsCache.remove(v)
+		c.itemsCache.update(v)
 	}
 }
 
@@ -201,8 +203,26 @@ func (c *cache) add(payLoad ActiveSession) {
 	}
 }
 
-//update flushes the cache with the data obtained from the DB.
-func (c *cache) update(payLoad ...ActiveSession) {
+func (c *cache) update(key string, cart *[]db.Product) {
+	if c.check(key) {
+		activeSession, _ := (*c)[key]
+		switch v := activeSession.(type) {
+		case *UserSession:
+			v.updateCart(cart)
+		case *MerchantSession:
+			//c.activeUserCache.refresh(v)
+		case *cachedMerchant:
+			//c.merchantCache.refresh(v)
+		case *cachedItem:
+			//c.itemsCache.update(v)
+		}
+
+	}
+
+}
+
+//refresh flushes the cache with the data obtained from the DB.
+func (c *cache) refresh(payLoad ...ActiveSession) {
 	flushedMap := make(map[string]ActiveSession)
 	for _, activeSession := range payLoad {
 		flushedMap[activeSession.getSessionID()] = activeSession
@@ -232,8 +252,8 @@ func (c *cache) check(key string) bool {
 }
 
 //remove deletes the  session given the ActiveSession.
-func (c *cache) remove(session ActiveSession) {
-	delete(*c, session.getSessionID())
+func (c *cache) remove(key string) {
+	delete(*c, key)
 }
 
 //cachedMerchant stores the merchant details and products.
