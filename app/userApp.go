@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+type ErrorT struct {
+	ErrMsg string
+}
+
 func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 	// Check session; if already logged in then redirect to home page
 	if _, alreadyLoggedIn := a.HaveValidSessionCookie(r); alreadyLoggedIn {
@@ -20,10 +24,11 @@ func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// ExecuteTemplate
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html")
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = t.Execute(w, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -34,16 +39,34 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	// Need to hash password
-
+	fmt.Println(username)
 	foundUser, err := a.db.GetUser(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("403 - Invalid Login Credentials"))
+		//w.Write([]byte("403 - Invalid Login Credentials"))
+		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := ErrorT{ErrMsg: "Test"}
+		err = t.Execute(w, data)
+		if err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 	if correct := PWcompare(password, foundUser.Password); !correct {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("403 - Invalid Login Credentials"))
+		//w.Write([]byte("403 - Invalid Login Credentials"))
+		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := ErrorT{ErrMsg: "Test"}
+		err = t.Execute(w, data)
+		if err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 
@@ -54,6 +77,16 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		foundUser,
 		nil)
 	a.cacheManager.AddtoCache(newsession)
+
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html", "templates/error.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := struct{ User db.User }{foundUser}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
@@ -64,12 +97,12 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 	foundMerch, err := a.db.GetMerchant(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("403 - Invalid Login Credentials"))
+		//w.Write([]byte("403 - Invalid Login Credentials"))
 		return
 	}
 	if correct := PWcompare(password, foundMerch.User.Password); !correct {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte("403 - Invalid Login Credentials"))
+		//w.Write([]byte("403 - Invalid Login Credentials"))
 		return
 	}
 
@@ -85,7 +118,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	sessionKeyVal := sessionKey.String()
 	params := mux.Vars(r)
 	// Verify valid user type
-	userType := params["type"]
+	userType := params["userType"]
 	if err != nil {
 		// No Session Cookie
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -133,10 +166,10 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	username := r.FormValue("Username")
-	email := strings.ToLower(r.FormValue("Email"))
-	pw1 := r.FormValue("Pw1")
-	pw2 := r.FormValue("Pw2")
+	username := r.FormValue("username")
+	email := strings.ToLower(r.FormValue("email"))
+	pw1 := r.FormValue("pw1")
+	pw2 := r.FormValue("pw2")
 
 	var u db.User
 
@@ -176,7 +209,9 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("201 - User Creation Successful"))
+	//w.Write([]byte("201 - User Creation Successful"))
+	//TODO setcookie here thanks
+	http.Redirect(w, r, "/", 201)
 }
 
 func (a *App) putUser(w http.ResponseWriter, r *http.Request) {

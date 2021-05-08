@@ -11,6 +11,12 @@
             <a class="py-2 d-none d-md-inline-block" href="#">Support</a>
             <a class="py-2 d-none d-md-inline-block" href="#">Pricing</a>
             <a class="py-2 d-none d-md-inline-block" href="#">Cart</a>
+
+            {{if not .Name}}
+            <a class="py-2 d-none d-md-inline-block" href="/user">{{.Name}}</a>
+            {{else}}
+            <a class="py-2 d-none d-md-inline-block" href="/login">Login</a>
+            {{end}}
         </div>
     </nav>
 {{end}}
