@@ -32,6 +32,7 @@ func (a *App) StartApp() {
 	a.connectDB()
 	a.setRoutes()
 	a.startRouter()
+
 }
 
 // Helpers for starting application.
