@@ -1,10 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
+{{define "merchantPage"}}
+<table className="table">
+    <tr>
+        <th className="th">ID</th>
+        <th className="th">Name</th>
+        <th className="th">Price</th>
+        <th className="th">Quantity</th>
+        <th className="th">Thumbnail</th>
+        <th className="th">Produce Description</th>
+        <th className="th">Edit</th>
+        <th className="th">Delete</th>
+    </tr>
+    {{range. }}
+    <tr >
+        <td className="td">{.Id}</td>
+        <td className="td">{.Name}</td>
+        <td className="td">{.Price}</td>
+        <td className="td">{.Quantity}</td>
+        <td className="td">{.Thumbnail}</td>
+        <td className="td">{.ProdDesc}</td>
+        <td className="td"><a>Edit</a></td>
+        <td className="td"><a>Delete</a>>/td>
+    </tr>
+    {{end}}
+</table>
