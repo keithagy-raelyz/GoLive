@@ -77,22 +77,20 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool
 }
 
 // UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
-
-//TODO
-// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
-func (a *App) UpdateSession(activeSession cache.ActiveSession, cart *[]db.Product) {
-	if cart == nil {
-		// MerchantSession or UserSession page navigation, extend expiry by standard session life
-		// a.cacheManager.UpdateCache()
-		//activeSession.UpdateExpiryTim(time.Now().Add(cache.SessionLife * time.Minute))
-	} else {
-		// UserSession adding product to cart, update expiry by standard session life and update cart
-		//activeSession.(*cache.UserSession).UpdateCart(cart)
-		//activeSession.UpdateExpiryTime(time.Now().Add(cache.SessionLife * time.Minute))
+func (a *App) UpdateSession(r *http.Request, cart *[]db.Product) error {
+	sessionValue, err := r.Cookie("sessionCookie")
+	if err != nil {
+		// No session cookie
+		return err
 	}
-}
-
-// DeleteSession is called upon logout
-func (a *App) DeleteSession(session cache.ActiveSession) {
-
+	sessionValStr := sessionValue.String()
+	cacheType := ""
+	switch string(sessionValStr[0]) {
+	case "U":
+		cacheType = "activeUsers"
+	case "M":
+		cacheType = "activeMerchants"
+	}
+	a.cacheManager.UpdateCache(sessionValStr, cacheType, cart)
+	return nil
 }

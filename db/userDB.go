@@ -39,12 +39,10 @@ func (d *Database) GetUser(username string) (User, error) {
 func (d *Database) CreateUser(user User, password string) error {
 	res, err := d.b.Exec("INSERT INTO Users (Username,Password,Email) VALUES (?,?,?)", user.Name, password, user.Email)
 	if err != nil {
-		//TODO return custom error msg
 		return err
 	}
 	rowCount, err := res.RowsAffected()
 	if err != nil || rowCount != 1 {
-		//TODO return custom error msg
 		return err
 	}
 	return nil
@@ -54,7 +52,6 @@ func (d *Database) CheckUser(user User) error {
 
 	res, err := d.b.Query("SELECT username,email FROM users where Username=? OR email=?", user.Name, user.Email)
 	if err != nil {
-		//TODO return custom error msg
 		return err
 	}
 	if res.Next() {
@@ -64,30 +61,24 @@ func (d *Database) CheckUser(user User) error {
 }
 
 func (d *Database) UpdateUser(user User) error {
-	//TODO consider updates to User called by random Curl requests ie no Authentication
 	res, err := d.b.Exec("Update Users set Username=?,Email=? where UserID=?", user.Name, user.Email, user.Id)
 	if err != nil {
-		//TODO return custom error msg
 		return err
 	}
 	rowCount, err := res.RowsAffected()
 	if err != nil || rowCount != 1 {
-		//TODO return custom error msg
 		return err
 	}
 	return nil
 }
 
 func (d *Database) DeleteUser(userID string) error {
-	//TODO consider delete to User called by random Curl requests ie no Authentication
 	res, err := d.b.Exec("DELETE FROM users where UserID =? ", userID)
 	if err != nil {
-		//TODO return custom error msg
 		return err
 	}
 	rowCount, err := res.RowsAffected()
 	if err != nil || rowCount != 1 {
-		//TODO return custom error msg
 		return err
 	}
 	return nil

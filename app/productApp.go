@@ -2,25 +2,30 @@ package app
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 
+	"GoLive/cache"
 	"GoLive/db"
 
 	"github.com/gorilla/mux"
 )
 
 func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
-
-	// No product ID supplied. Show all products
-	products, err := a.db.GetAllProducts()
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err)
 	}
-
-	// TODO: Execute some template passing in products slice
-	fmt.Println(products)
+	p, _ := a.db.GetAllProducts()
+	data := Data{
+		Products: p,
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
@@ -51,21 +56,14 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	thumbnail := r.FormValue("Thumbnail")
 	price, err := strconv.ParseFloat(r.FormValue("Price"), 64)
 	if err != nil {
-		// TODO error handling
 		log.Fatal(err)
 	}
 	quantity, err := strconv.Atoi(r.FormValue("Quantity"))
 	if err != nil {
-		// TODO error handling
 		log.Fatal(err)
 	}
 
-	//TODO get merchID from cookie/session instead safer
-	merchID := r.FormValue("MerchID")
-	if err != nil {
-		// TODO error handling
-		log.Fatal(err)
-	}
+	merchID := a.merchIDFromSession(w, r)
 
 	if price <= 0 || quantity < 0 || ProdDesc == "" || name == "" {
 
@@ -74,11 +72,9 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO Session handling to get MerchID
 	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity, MerchID: merchID, Sales: 0}
 	err = a.db.CreateProduct(p)
 	if err != nil {
-		// TODO error handling
 		fmt.Println(err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Merchant ID provided is Invalid"))
@@ -100,7 +96,6 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 
 	name := r.URL.Query().Get("Name")
 	if name == "" {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid Name submitted"))
 		return
@@ -108,7 +103,6 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 
 	quantity, err := strconv.Atoi(r.URL.Query().Get("Quantity"))
 	if r.URL.Query().Get("Quantity") == "" || err != nil {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid Quantity submitted"))
 		return
@@ -116,7 +110,6 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 
 	price, err := strconv.ParseFloat(r.URL.Query().Get("Price"), 64)
 	if r.URL.Query().Get("Price") == "" || err != nil {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid Price submitted"))
 		return
@@ -124,29 +117,20 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 
 	ProdDesc := r.URL.Query().Get("ProdDesc")
 	if ProdDesc == "" {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid ProdDesc submitted"))
 		return
 	}
 
-	merchID := r.URL.Query().Get("MerchID")
-	if merchID == "" {
-		//TODO proper error handling
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		w.Write([]byte("422 - Invalid MerchID submitted"))
-		return
-	}
+	merchID := a.merchIDFromSession(w, r)
 
 	thumbnail := r.URL.Query().Get("Thumbnail")
 	if thumbnail == "" {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Invalid Thumbnail submitted"))
 		return
 	}
 
-	// TODO session handling to supply correct MerchID
 	p := db.Product{
 		Id:        prodID,
 		Name:      name,
@@ -159,7 +143,6 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 	err = a.db.UpdateProduct(p)
 	if err != nil {
 		fmt.Println(err)
-		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
 		return
@@ -173,20 +156,33 @@ func (a *App) delProd(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	prodID, ok := params["productid"]
 	if !ok {
-		//TODO proper error handling in template
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Status not Found"))
 		return
 	}
 
-	// TODO Session handling to pass in correct merchID
-	err := a.db.DeleteProduct(prodID, "0")
+	merchID := a.merchIDFromSession(w, r)
+
+	err := a.db.DeleteProduct(prodID, merchID)
 	if err != nil {
-		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Deleted Successfully"))
+}
+
+func (a *App) merchIDFromSession(w http.ResponseWriter, r *http.Request) string {
+	sessionCookie, err := r.Cookie("sessionCookie")
+	if err != nil {
+		return ""
+	}
+	sessionValStr := sessionCookie.String()
+	activeSession, found := a.cacheManager.GetFromCache(sessionValStr, "activeMerchants")
+	if !found {
+		http.Redirect(w, r, "/", http.StatusNotFound)
+	}
+	accountOwner := activeSession.(*cache.MerchantSession).GetSessionOwner()
+	return accountOwner.Id
 }

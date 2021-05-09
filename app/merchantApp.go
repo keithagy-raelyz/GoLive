@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"strings"
@@ -37,7 +36,6 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
-	// TODO inventory has to be renamed to accurately reflect no rows were found
 	merchant, inventory, err := a.db.GetInventory(merchID)
 	if err != nil {
 		// Merchant exist but no product
@@ -75,12 +73,16 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 	m.Name = username
 	m.Email = email
 	if m.Name == "" {
-		//TODO proper error handling
-		log.Fatal()
+		fmt.Println("Empty user name")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Bad Request"))
+		return
 	}
 	if m.Email == "" {
-		//TODO proper error handling
-		log.Fatal()
+		fmt.Println("Empty email")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Bad Request"))
+		return
 	}
 	err := a.db.CheckMerchant(m)
 	if err != nil {
@@ -121,7 +123,7 @@ func (a *App) putMerch(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Status Not Found"))
-		// TODO display error message serve a proper template redirecting to registry of all merchants
+		http.Redirect(w, r, "/merchants", http.StatusNotFound)
 		return
 	}
 	MerchDesc := r.URL.Query().Get("MerchDesc")

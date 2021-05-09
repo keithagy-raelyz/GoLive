@@ -84,7 +84,7 @@ func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession
 	case "activeUsers":
 		return c.activeUserCache.get(key)
 	case "activeMerchants":
-		return c.activeUserCache.get(key)
+		return c.merchantCache.get(key)
 	case "cachedMerchants":
 		return c.merchantCache.get(key)
 	case "cachedItem":
@@ -170,12 +170,20 @@ type MerchantSession struct {
 	owner db.MerchantUser
 }
 
+func (m *MerchantSession) GetSessionOwner() db.MerchantUser {
+	return m.owner
+}
+
 //UserSession implements the ActiveSession interface by embedding the session struct.
 //Stores information about the logged in user and his cart data.
 type UserSession struct { // Cart CRUD tied to methods on this type.
 	session
-	owner db.User // Owner can be User or a Merchant.
+	owner db.User
 	cart  *[]db.Product
+}
+
+func (u *UserSession) GetSessionOwner() db.User {
+	return u.owner
 }
 
 // UpdateCart updates the session's cart.
