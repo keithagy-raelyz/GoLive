@@ -1,125 +1,137 @@
 {{define "loginBody"}}
-<div>
-    <input type="checkbox" id="toggleContainer">
-    <div class="userContainer">
-        <input type="checkbox" id="toggleUser">
-        <section class="text-center">
-            <div class="container">
-                <label>User Login</label>
-                <label id="psuedoLink" for="toggleContainer">Click here for Merchant Login</label>
-            </div>
-        </section>
-        {{with .ErrMsg}}
-        <p style="color:red;font-size: larger">{{.}}</p>
-        {{end}}
 
-        {{template "error"}}
-        <div class="main login" style="padding:0px 20px 200px 300px;margin-left: 20%">
-            <div class="col-md-6 col-sm-12">
-                <div class="login-form" style="margin-top:30%">
-                    <form class="formbox" method="POST" action="/login/user">
+<input type="checkbox" id="toggleContainer">
+<div class="userContainer text-center">
+    <input type="checkbox" id="toggleUser">
+    <main class="form-signin login">
+        <form action="/login/user" method="post">
+            <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
+            <h1 class="h3 mb-3 fw-normal login">User Login</h1>
+            <label id="psuedoLink" for="toggleContainer">Click here for Merchant</label>
+            {{with .ErrMsg}}
+            <p style="color:red;font-size: larger">{{.}}</p>
+            {{end}}
+            <div class="form-floating">
+                <input name="username" type="text" class="form-control" id="floatingInput" placeholder="Username"
+                       required>
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating">
+                <input name="password" type="password" class="form-control" id="floatingPassword" placeholder="Password"
+                       required>
+                <label for="floatingPassword">Password</label>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+            <label id="psuedoLink" for="toggleUser">Not a User? Click here to Register</label>
+            <p class="mt-5 mb-3 text-muted">© 2017–2021</p>
+        </form>
+    </main>
+    <main class="form-signin register">
+        <form action="/login/merchant" method="post">
+            <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
+            <h1 class="h3 mb-3 fw-normal login">User Registration</h1>
+            <label id="psuedoLink" for="toggleContainer">Click here for Merchant</label>
+            {{with .ErrMsg}}
+            <p style="color:red;font-size: larger">{{.}}</p>
+            {{end}}
+            <div class="form-floating">
+                <input name="username" type="text" class="form-control" id="floatingInput" placeholder="username"
+                       required>
 
-                        <div class="form-group">
-                            <label>User Name</label>
-                            <input name="username" type="text" class="form-control" placeholder="User Name">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input name="password" type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <button type="submit" class="btn btn-black">Login</button>
-                        <label id="psuedoLink" for="toggleUser">No Account? Register First</label>
-                    </form>
-                </div>
+                <label for="floatingInput">Username</label>
             </div>
-        </div>
-        <div class="main register" style="padding:0px 20px 200px 300px;margin-left: 20%">
-            <div class="col-md-6 col-sm-12">
-                <div class="login-form" style="margin-top:30%">
-                    <form class="formbox" method="POST" action="/users">
-                        <div class="form-group">
-                            <label>User Name</label>
-                            <input name="username" type="text" class="form-control" placeholder="User Name">
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input name="email" type="email" class="form-control" placeholder="Password">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input name="pw1" type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input name="pw2" type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <button type="submit" class="btn btn-secondary">Register</button>
-                        <label id="psuedoLink" for="toggleUser">Already have an account? Login Here</label>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="merchantContainer">
-        <input type="checkbox" id="toggleMerchant">
-        <section class="text-center">
-            <div class="container">
-                <label>Merchant Login</label>
-                <label id="psuedoLink" for="toggleContainer">Click here for User Login</label>
-            </div>
-        </section>
-        {{template "error"}}
-        <div class="main login" style="padding:0px 20px 200px 300px;margin-left: 20%">
-            <div class="col-md-6 col-sm-12">
-                <div class="login-form" style="margin-top:30%">
-                    <form class="formbox" method="POST" action="/login/merchant">
+            <div class="form-floating">
+                <input name="email" type="email" class="form-control" id="floatingInput" placeholder="abc@hotmail.com"
+                       required>
 
-                        <div class="form-group">
-                            <label>User Name</label>
-                            <input type="text" class="form-control" placeholder="User Name">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <button type="submit" class="btn btn-black">Login</button>
-                        <label id="psuedoLink" for="toggleMerchant">No Account? Register First</label>
-                    </form>
-                </div>
+                <label for="floatingInput">Email</label>
             </div>
-        </div>
-        <div class="main register" style="padding:0px 20px 200px 300px;margin-left: 20%">
-            <div class="col-md-6 col-sm-12">
-                <div class="login-form" style="margin-top:30%">
-                    <form class="formbox" method="POST" action="/merchants">
-                        <div class="form-group">
-                            <label>User Name</label>
-                            <input type="text" class="form-control" placeholder="User Name">
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <input type="password" class="form-control" placeholder="Password">
-                        </div>
-                        <button type="submit" class="btn btn-secondary">Register</button>
-                        <label id="psuedoLink" for="toggleMerchant">Already have an account? Login Here</label>
-                    </form>
-                </div>
+            <div class="form-floating">
+                <input name="pw1" type="password" class="form-control" id="floatingPassword" placeholder="Password"
+                       required>
+                <label for="floatingPassword">Password</label>
             </div>
-        </div>
-    </div>
+            <div class="form-floating">
+                <input name="pw2" type="password" class="form-control" id="floatingInput" placeholder="Password"
+                       required>
+
+                <label for="floatingInput">Password</label>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Register</button>
+            <label id="psuedoLink" for="toggleUser">Already Registered? Click here to Sign in</label>
+            <p class="mt-5 mb-3 text-muted">© 2017–2021</p>
+        </form>
+    </main>
 </div>
+<div class="merchantContainer text-center">
+    <input type="checkbox" id="toggleMerchant">
+    <main class="form-signin login">
+        <form action="/merchants" method="post">
+            <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
+            <h1 class="h3 mb-3 fw-normal login">Merchant Login</h1>
+            <label id="psuedoLink" for="toggleContainer">Click here for User</label>
+            {{with .ErrMsg}}
+            <p style="color:red;font-size: larger">{{.}}</p>
+            {{end}}
+            <div class="form-floating">
+                <input name="username" type="text" class="form-control" id="floatingInput" placeholder="username" required>
+
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="floatingPassword" placeholder="Password" required>
+                <label for="floatingPassword">Password</label>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
+            <label id="psuedoLink" for="toggleMerchant">Not a User? Click here to Register</label>
+            <p class="mt-5 mb-3 text-muted">© 2017–2021</p>
+        </form>
+    </main>
+    <main class="form-signin register">
+        <form action="/merchants" method="post">
+            <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
+            <h1 class="h3 mb-3 fw-normal login">Merchant Registration</h1>
+            <label id="psuedoLink" for="toggleContainer">Click here for User</label>
+            {{with .ErrMsg}}
+            <p style="color:red;font-size: larger">{{.}}</p>
+            {{end}}
+            <div class="form-floating">
+                <input name="username" type="text" class="form-control" id="floatingInput" placeholder="username"
+                       required>
+
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating">
+                <input name="email" type="email" class="form-control" id="floatingInput" placeholder="abc@hotmail.com"
+                       required>
+
+                <label for="floatingInput">Email</label>
+            </div>
+            <div class="form-floating">
+                <input name="pw1" type="password" class="form-control" id="floatingPassword" placeholder="Password"
+                       required>
+                <label for="floatingPassword">Password</label>
+            </div>
+            <div class="form-floating">
+                <input name="pw2" type="password" class="form-control" id="floatingInput" placeholder="Password"
+                       required>
+
+                <label for="floatingInput">Password</label>
+            </div>
+            <div class="form-floating">
+                <input name="MerchDesc" type="text" class="form-control" id="floatingInput"
+                       placeholder="Merchant Description"
+                       required>
+
+                <label for="floatingInput">Product Description</label>
+            </div>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Register</button>
+            <label id="psuedoLink" for="toggleUser">Already Registered? Click here to Sign in</label>
+            <p class="mt-5 mb-3 text-muted">© 2017–2021</p>
+        </form>
+    </main>
+</div>
+
 {{end}}
 
 {{define "styles"}}
@@ -173,6 +185,13 @@
     .image img {
         height: 100%;
         width: 100%;
+    }
+
+    .form-signin {
+        width: 100%;
+        max-width: 330px;
+        padding: 15px;
+        margin: auto;
     }
 </style>
 {{end}}
