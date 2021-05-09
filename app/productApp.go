@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -40,7 +41,19 @@ func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(product)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Valid merchant ID, displaying store"))
+	//w.Write([]byte("200 - Valid merchant ID, displaying store"))
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/product.html", "templates/error.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var products = []db.Product{product}
+
+	data := Data{Products: products}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func (a *App) postProd(w http.ResponseWriter, r *http.Request) {

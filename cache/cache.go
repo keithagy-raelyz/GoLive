@@ -33,7 +33,7 @@ func NewCacheManager() *CacheManager {
 }
 
 // NewUserSession takes in required inputs and returns a new UserSession.
-func NewUserSession(sessionKey string, expiry time.Time, user db.User, cart *[]db.Product) *UserSession {
+func NewUserSession(sessionKey string, expiry time.Time, user db.User, cart *[]CartItem) *UserSession {
 	return &UserSession{
 		session: session{sessionKey, expiry},
 		owner:   user,
@@ -65,7 +65,7 @@ func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 
 //UpdateCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.updateExpiryTime() method.
 // In the case of a user updating their cart, UpdateCache also updates the respective product cart.
-func (c *CacheManager) UpdateCache(key string, cacheType string, cart *[]db.Product) {
+func (c *CacheManager) UpdateCache(key string, cacheType string, cart *[]CartItem) {
 	switch cacheType {
 	case "activeUsers":
 		c.activeUserCache.update(key, cart)
@@ -78,11 +78,16 @@ func (c *CacheManager) UpdateCache(key string, cacheType string, cart *[]db.Prod
 	}
 }
 
+type SessionCopy interface {
+	Data()
+}
+
 //GetFromCache identifies the type of the payload before retrieving it from the respective cache by calling on the respective cache.get() method.
 func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession, bool) {
 	switch cacheType {
 	case "activeUsers":
 		return c.activeUserCache.get(key)
+
 	case "activeMerchants":
 		return c.activeUserCache.get(key)
 	case "cachedMerchants":
@@ -172,15 +177,19 @@ type MerchantSession struct {
 
 //UserSession implements the ActiveSession interface by embedding the session struct.
 //Stores information about the logged in user and his cart data.
-type UserSession struct { // Cart CRUD tied to methods on this type.
+type UserSession struct { // cart CRUD tied to methods on this type.
 	session
-	owner db.User // Owner can be User or a Merchant.
-	cart  *[]db.Product
+	owner db.User // owner can be User or a Merchant.
+	cart  *[]CartItem
 }
 
 // UpdateCart updates the session's cart.
-func (u *UserSession) updateCart(cart *[]db.Product) {
+func (u *UserSession) updateCart(cart *[]CartItem) {
 	u.cart = cart
+}
+
+func (u *UserSession) Data() (db.User, []CartItem) {
+	return u.owner, *u.cart
 }
 
 //activeUserCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
@@ -203,7 +212,7 @@ func (c *cache) add(payLoad ActiveSession) {
 	}
 }
 
-func (c *cache) update(key string, cart *[]db.Product) {
+func (c *cache) update(key string, cart *[]CartItem) {
 	if c.check(key) {
 		activeSession, _ := (*c)[key]
 		switch v := activeSession.(type) {
@@ -256,6 +265,8 @@ func (c *cache) remove(key string) {
 	delete(*c, key)
 }
 
+type Cart []CartItem
+
 //cachedMerchant stores the merchant details and products.
 type cachedMerchant struct {
 	session
@@ -303,4 +314,24 @@ func (i *itemCache) update(payLoad ...ActiveSession) {
 //sort sorts the sorted item cache.
 func (i *itemCache) sort() {
 	sort.Slice(i.sorted, func(j, k int) bool { return i.sorted[j].Sales > i.sorted[k].Sales })
+}
+
+type CartItem struct {
+	Product db.Product
+	Count   int
+}
+
+func (c CartItem) Total(quantity int, price float64) float64 {
+	return float64(quantity) * price
+}
+func (c CartItem) Value() float64 {
+	return float64(c.Count) * c.Product.Price
+}
+
+func (c Cart) GrandTotal() float64 {
+	var total float64
+	for _, cartItem := range c {
+		total += cartItem.Value()
+	}
+	return total
 }

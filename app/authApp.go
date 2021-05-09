@@ -19,15 +19,16 @@ func (a *App) InitializeCacheManager() {
 			Name:     "DogShiet",
 			Email:    "feecalmatter@hotmail.com",
 			Password: "abc"},
-		&[]db.Product{})
+		&[]cache.CartItem{})
 	a.cacheManager.AddtoCache(dummyUserSession)
 }
 
 func (a *App) InitializeBlacklist() {
 	a.blacklist = make(map[string]bool)
-	a.blacklist["/cart"] = true
-	a.blacklist["/checkout"] = true
-	a.blacklist["/users"] = true
+	//TODO undo blacklist here commenting out to test routes.
+	//a.blacklist["/cart"] = true
+	//a.blacklist["/checkout"] = true
+	//a.blacklist["/users"] = true
 }
 
 // Helper function to check if login should be verified for a given request URL
