@@ -31,11 +31,11 @@ func (d *Database) GetAllMerchants() ([]Merchant, error) {
 	return merchants, nil
 }
 
-func (d *Database) GetInventory(merchID string) (Merchant, []Product, error) {
+func (d *Database) GetInventory(merchID string) (Merchant, error) {
 	merchProdsRows, err := d.b.Query("SELECT * from (SELECT username, merchants.merchantid, merchants.MerchDesc, products.ProductID, products.Product_Name, products.Quantity, products.Thumbnail, products.price, products.ProdDesc, products.Sales from merchants LEFT JOIN products on products.merchantid = merchants.merchantid) AS joinTable WHERE merchantid = ?;", merchID)
 	if err != nil {
 		// fmt.Println("Query error", err)
-		return Merchant{}, []Product{}, err
+		return Merchant{}, err
 	}
 	defer merchProdsRows.Close()
 
@@ -47,11 +47,12 @@ func (d *Database) GetInventory(merchID string) (Merchant, []Product, error) {
 		err = merchProdsRows.Scan(&merch.Name, &merch.Id, &merch.MerchDesc, &p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.ProdDesc, &p.Sales)
 		if err != nil {
 			// fmt.Println("Scan error", err)
-			return merch, merchProds, err
+			return merch, err
 		}
 		merchProds = append(merchProds, p)
 	}
-	return merch, merchProds, nil
+	merch.Products = merchProds
+	return merch, nil
 }
 
 func (d *Database) CheckMerchant(merchant MerchantUser) error {

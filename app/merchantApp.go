@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -24,7 +25,17 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Merchants:", merchants)
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Displaying all merchants"))
+	//w.Write([]byte("200 - Displaying all merchants"))
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewAllMerchants.html", "templates/error.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := Data{Merchants: merchants}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
 
 }
 
@@ -38,17 +49,27 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
 	// TODO inventory has to be renamed to accurately reflect no rows were found
-	merchant, inventory, err := a.db.GetInventory(merchID)
+	merchant, err := a.db.GetInventory(merchID)
 	if err != nil {
 		// Merchant exist but no product
 		fmt.Println("Blank inventory for merchid:", merchID, merchant)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("200 - Valid merchID but empty inventory"))
+		//w.Write([]byte("200 - Valid merchID but empty inventory"))
 		// fmt.Println("200, empty inv, merchID:", merchID)
+		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewMerchantProducts.html", "templates/error.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+		data := Data{Merchant: merchant}
+		err = t.Execute(w, data)
+		if err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 
-	if inventory == nil {
+	//TODO is this logic correct?
+	if merchant.Products == nil {
 		// Invalid Merchant ID
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Invalid merchID"))
@@ -57,7 +78,17 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	}
 	// fmt.Println("Inventory for merchID:", merchID, inventory)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Valid merchant ID, displaying store"))
+	//w.Write([]byte("200 - Valid merchant ID, displaying store"))
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewMerchantProducts.html", "templates/error.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	data := Data{Merchant: merchant}
+	err = t.Execute(w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
 }
 
 // POST method - Add a Merchant (ADMIN ONLY)

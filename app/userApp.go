@@ -14,10 +14,12 @@ import (
 )
 
 type Data struct {
-	User     db.User
-	Merchant db.MerchantUser
-	Error    Error
-	Products []db.Product
+	User      db.User
+	Merchant  db.Merchant
+	Merchants []db.Merchant
+	Error     Error
+	Products  []db.Product
+	Cart      cache.Cart
 }
 type Error struct {
 	ErrMsg string
