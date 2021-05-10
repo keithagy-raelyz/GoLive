@@ -27,6 +27,7 @@ func (a *App) checkOutPage(w http.ResponseWriter, r *http.Request) {
 			MerchID:   "10",
 			Sales:     0},
 		Count: 5}
+	//TODO verify if COUNT > quantity reject
 	cart := []cache.CartItem{cartItem}
 	data := Data{Cart: cart}
 	err = t.Execute(w, data)
