@@ -108,6 +108,7 @@ func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Reque
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {
+	//TODO fix this shit, STOP PINGING THE FUCKING DB
 	p, _ := a.db.GetAllProducts()
 	data := Data{
 		Products: p,

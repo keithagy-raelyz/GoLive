@@ -2,6 +2,7 @@ package app
 
 import (
 	"GoLive/cache"
+	"GoLive/db"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -43,6 +44,40 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 	//we only cache when someone adds to cart
 	//map[productID]product on expiry, update the DB IF changes have been made changes boolean
 
+	//Obtain user session Data, redirect if invalid
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
+	data := Data{
+		User: u,
+		Cart: c,
+	}
+
+	//Obtain item Data
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	id := r.FormValue("Id")
+	p, ok := a.cacheManager.GetFromCache(id, "Product")
+	if !ok {
+		p, err = a.db.GetProduct(id)
+		if err != nil {
+			fmt.Println(err)
+		}
+		a.cacheManager.AddtoCache(p)
+	}
+
+	//Add item data to cart
+	data.Cart = append(data.Cart, cache.CartItem{p.(db.Product), 1})
+	//Update session ID here, UPdate item cache
+
+	http.Redirect(w, r, "/cart", http.StatusSeeOther)
+
 	//SCENARIO A (EVERYONE CAN ADD TO CART, DB TRANSACTION WILL VERIFY IF IT CNA GO THROUGH)
 	//eg 10 ppl have varying amounts of shit in their cart, lets say 30x shit
 	// DB only has 10 shit, should this be allowed?
@@ -75,6 +110,20 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
+
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
+	data := Data{
+		User: u,
+		Cart: c,
+	}
+	//Add to cart and udpate in the session
+
 	jData, err := json.Marshal(Response{true})
 	if err != nil {
 		fmt.Println(err)
@@ -85,6 +134,25 @@ func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) deleteCart(w http.ResponseWriter, r *http.Request) {
 
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
+	data := Data{
+		User: u,
+		Cart: c,
+	}
+	//Delete one from carrt and update in the cache
+
+	jData, err := json.Marshal(Response{true})
+	if err != nil {
+		fmt.Println(err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jData)
 }
 
 type Response struct {
