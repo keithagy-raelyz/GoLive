@@ -86,14 +86,14 @@ func (a *App) setRoutes() {
 	a.router.HandleFunc("/users/{userid}", a.delUser).Methods("DELETE")
 
 	// Restful Route for Cart
-	a.router.HandleFunc("/cart", a.getUser).Methods("GET")
-	a.router.HandleFunc("/cart/{productid}", a.getUser).Methods("POST")
-	a.router.HandleFunc("/cart/{productid}", a.getUser).Methods("PUT")
-	a.router.HandleFunc("/cart/{productid}", a.getUser).Methods("DELETE")
+	a.router.HandleFunc("/cart", a.getCart).Methods("GET")
+	a.router.HandleFunc("/cart/{productid}", a.postCart).Methods("POST")
+	a.router.HandleFunc("/cart/{productid}", a.updateCart).Methods("PUT")
+	a.router.HandleFunc("/cart/{productid}", a.deleteCart).Methods("DELETE")
 
 	// Checkout
-	a.router.HandleFunc("/checkout", a.getUser).Methods("GET")
-	a.router.HandleFunc("/checkout", a.getUser).Methods("POST")
+	a.router.HandleFunc("/checkout", a.checkOutPage).Methods("GET")
+	a.router.HandleFunc("/checkout", a.payment).Methods("POST")
 
 }
 

@@ -19,15 +19,16 @@ func (a *App) InitializeCacheManager() {
 			Name:     "DogShiet",
 			Email:    "feecalmatter@hotmail.com",
 			Password: "abc"},
-		&[]db.Product{})
+		&[]cache.CartItem{})
 	a.cacheManager.AddtoCache(dummyUserSession)
 }
 
 func (a *App) InitializeBlacklist() {
 	a.blacklist = make(map[string]bool)
-	a.blacklist["/cart"] = true
-	a.blacklist["/checkout"] = true
-	a.blacklist["/users"] = true
+	//TODO undo blacklist here commenting out to test routes.
+	//a.blacklist["/cart"] = true
+	//a.blacklist["/checkout"] = true
+	//a.blacklist["/users"] = true
 }
 
 // Helper function to check if login should be verified for a given request URL
@@ -77,7 +78,7 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool
 }
 
 // UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
-func (a *App) UpdateSession(r *http.Request, cart *[]db.Product) error {
+func (a *App) UpdateSession(r *http.Request, cart *[]cache.CartItem) error {
 	sessionValue, err := r.Cookie("sessionCookie")
 	if err != nil {
 		// No session cookie
