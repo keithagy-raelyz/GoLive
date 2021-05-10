@@ -4,13 +4,15 @@ import (
 	"GoLive/cache"
 	"GoLive/db"
 	"fmt"
-	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
 	"html/template"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Data struct {
@@ -46,9 +48,12 @@ func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
-	// Need to hash password
-	fmt.Println(username)
-	fmt.Println(password)
+
+	hashedPW, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	foundUser, err := a.db.GetUser(username)
 	if err != nil {
 		fmt.Println(err, "error in get user")
@@ -65,7 +70,7 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if correct := PWcompare(password, foundUser.Password); !correct {
+	if err := bcrypt.CompareHashAndPassword(hashedPW, []byte(foundUser.Password)); err != nil {
 		fmt.Println(foundUser.Password, "not correct")
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
@@ -81,12 +86,17 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newsessionKey := uuid.NewV4().String()
+	newsessionKey := "U" + uuid.NewV4().String()
 	newsession := cache.NewUserSession(
 		newsessionKey,
-		time.Now().Add(cache.SessionLife),
+		time.Now().Add(cache.SessionLife*time.Minute),
 		foundUser,
 		nil)
+	newCookie := &http.Cookie{
+		Name:  "sessionCookie",
+		Value: newsessionKey,
+	}
+	r.AddCookie(newCookie)
 	a.cacheManager.AddtoCache(newsession)
 
 	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html", "templates/error.html")
@@ -104,7 +114,11 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
-	// Need to hash password
+
+	hashedPW, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	foundMerch, err := a.db.GetMerchant(username)
 	if err != nil {
@@ -112,13 +126,13 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 		//w.Write([]byte("403 - Invalid Login Credentials"))
 		return
 	}
-	if correct := PWcompare(password, foundMerch.User.Password); !correct {
+	if err := bcrypt.CompareHashAndPassword(hashedPW, []byte(foundMerch.User.Password)); err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
 		return
 	}
 
-	newsessionKey := uuid.NewV4().String()
+	newsessionKey := "M" + uuid.NewV4().String()
 	newsession := cache.NewMerchSession(newsessionKey,
 		time.Now().Add(cache.SessionLife),
 		foundMerch)
@@ -128,17 +142,20 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	sessionKey, err := r.Cookie("sessionCookie")
 	sessionKeyVal := sessionKey.String()
-	params := mux.Vars(r)
 	// Verify valid user type
-	userType := params["userType"]
 	if err != nil {
 		// No Session Cookie
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	a.cacheManager.RemoveFromCache(sessionKeyVal, userType)
+	switch string(sessionKeyVal[0]) {
+	case "U":
+		a.cacheManager.RemoveFromCache(sessionKeyVal, "activeUsers")
+	case "M":
+		a.cacheManager.RemoveFromCache(sessionKeyVal, "activeMerchants")
+	}
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return
 }
 
 func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
@@ -157,20 +174,15 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	// Verify valid merchant ID
 	userID := params["userid"]
-
-	// Merchant ID supplied
-	// Show all products under merchID; if invalid merchID handle error
-	// TODO GetInventory errors need to be multiplexed to differentiate between invalid merchant and empty store
 	var u db.User
 	u, err := a.db.GetUser(userID)
 	if err != nil {
 		fmt.Println(err)
-		// Invalid merchant ID inputted
+		// Invalid user ID inputted
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - No user for input USERID"))
 		return
 	}
-
 	fmt.Println(u, "printing user")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Valid merchant ID, displaying store"))
@@ -188,17 +200,21 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 	u.Name = username
 	u.Email = email
 	if u.Name == "" {
-		//TODO proper error handling
-		log.Fatal()
+		fmt.Println("Empty user name")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Bad Request"))
+		return
 	}
 	if u.Email == "" {
-		//TODO proper error handling
-		log.Fatal()
+		fmt.Println("Empty email")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("400 - Bad Request"))
+		return
 	}
 	err := a.db.CheckUser(u)
 	if err != nil {
 		//send the err msg back (err = errmsg)
-		fmt.Println(err, "CHeckUser error")
+		fmt.Println(err, "CheckUser error")
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 - Bad Request"))
 		return
@@ -222,8 +238,19 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	//w.Write([]byte("201 - User Creation Successful"))
-	//TODO setcookie here thanks
-	http.Redirect(w, r, "/", 201)
+	newsessionKey := "U" + uuid.NewV4().String()
+	newsession := cache.NewUserSession(
+		newsessionKey,
+		time.Now().Add(cache.SessionLife*time.Minute),
+		u,
+		nil)
+	newCookie := &http.Cookie{
+		Name:  "sessionCookie",
+		Value: newsessionKey,
+	}
+	r.AddCookie(newCookie)
+	a.cacheManager.AddtoCache(newsession)
+	http.Redirect(w, r, "/", http.StatusCreated)
 }
 
 func (a *App) putUser(w http.ResponseWriter, r *http.Request) {
@@ -232,13 +259,12 @@ func (a *App) putUser(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Status Not Found"))
-		// TODO display error message serve a proper template redirecting to registry of all merchants
+		http.Redirect(w, r, "/users", http.StatusNotFound)
 		return
 	}
 
 	username := r.URL.Query().Get("Username")
 	if username == "" {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 - Username cannot be empty"))
 		return
@@ -246,7 +272,6 @@ func (a *App) putUser(w http.ResponseWriter, r *http.Request) {
 
 	email := r.URL.Query().Get("Email")
 	if email == "" {
-		//TODO proper error handling
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 - Email cannot be empty"))
 		return
@@ -257,7 +282,6 @@ func (a *App) putUser(w http.ResponseWriter, r *http.Request) {
 	u.Id = userID
 	err := a.db.UpdateUser(u)
 	if err != nil {
-		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
 		return
@@ -280,7 +304,6 @@ func (a *App) delUser(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	if err != nil {
-		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
 		return
@@ -288,26 +311,3 @@ func (a *App) delUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Deleted Successfully"))
 }
-
-//func (a *App) changeUserPw(w http.ResponseWriter, r *http.Request){
-//	//TODO pw change
-//	pw1:= r.URL.Query().Get("Pw1")
-//	if pw1== "" {
-//		//TODO proper error handling
-//		w.WriteHeader(http.StatusBadRequest)
-//		w.Write([]byte("400 - Password cannot be empty"))
-//		return
-//	}
-//	pw2:= r.URL.Query().Get("Pw2")
-//	if pw2== "" {
-//		//TODO proper error handling
-//		w.WriteHeader(http.StatusBadRequest)
-//		w.Write([]byte("400 - Password cannot be empty"))
-//		return
-//	}
-//	if pw1 != pw2 {
-//		w.WriteHeader(http.StatusBadRequest)
-//		w.Write([]byte("400 - Password must be different"))
-//		return
-//	}
-//}

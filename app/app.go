@@ -63,13 +63,6 @@ func (a *App) setRoutes() {
 	a.router.HandleFunc("/login/merchant", a.validateMerchantLogin).Methods("POST") // Begin Merchant Validation
 	a.router.HandleFunc("/login", a.logout).Methods("DELETE")                       // Delete session i.e logout
 
-	// //Authentication
-	// a.router.HandleFunc("/sessions", a.allMerch).Methods("GET") // ADMIN ONLY view/delete active sessions
-	// a.router.HandleFunc("/sessions/{username}", a.allMerch).Methods("GET") // Validate session
-	// a.router.HandleFunc("/sessions/{username}", a.allMerch).Methods("POST") // Validate login (user input)
-	// a.router.HandleFunc("/sessions/{username}", a.allMerch).Methods("PUT") // Extend session
-	// a.router.HandleFunc("/sessions/{username}", a.allMerch).Methods("GET") // Delete session (logout)
-
 	// Get all Merchants and Products
 	a.router.HandleFunc("/merchants", a.allMerch).Methods("GET")
 	a.router.HandleFunc("/products", a.allProd).Methods("GET")
@@ -129,9 +122,9 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PWcompare(sessionPW string, cachedPW string) bool {
-	if sessionPW == cachedPW {
-		return true
-	}
-	return false
-}
+// func PWcompare(sessionPW string, cachedPW string) bool {
+// 	if sessionPW == cachedPW {
+// 		return true
+// 	}
+// 	return false
+// }
