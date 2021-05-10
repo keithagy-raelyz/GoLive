@@ -27,7 +27,7 @@
         </form>
     </main>
     <main class="form-signin register">
-        <form action="/login/merchant" method="post">
+        <form action="/users" method="post">
             <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
             <h1 class="h3 mb-3 fw-normal login">User Registration</h1>
             <label id="psuedoLink" for="toggleContainer">Click here for Merchant</label>
@@ -66,7 +66,7 @@
 <div class="merchantContainer text-center">
     <input type="checkbox" id="toggleMerchant">
     <main class="form-signin login">
-        <form action="/merchants" method="post">
+        <form action="/login/merchants" method="post">
             <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
             <h1 class="h3 mb-3 fw-normal login">Merchant Login</h1>
             <label id="psuedoLink" for="toggleContainer">Click here for User</label>
@@ -123,7 +123,7 @@
                        placeholder="Merchant Description"
                        required>
 
-                <label for="floatingInput">Product Description</label>
+                <label for="floatingInput">Merchant Description</label>
             </div>
             <button class="w-100 btn btn-lg btn-primary" type="submit">Register</button>
             <label id="psuedoLink" for="toggleUser">Already Registered? Click here to Sign in</label>

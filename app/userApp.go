@@ -3,6 +3,7 @@ package app
 import (
 	"GoLive/cache"
 	"GoLive/db"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
@@ -16,12 +17,13 @@ import (
 )
 
 type Data struct {
-	User      db.User
-	Merchant  db.Merchant
-	Merchants []db.Merchant
-	Error     Error
-	Products  []db.Product
-	Cart      cache.Cart
+	User         db.User       //to display individual user
+	Merchant     db.Merchant   //to display individual merchant profile to himself logged in merchant
+	MerchantShop db.Merchant   //display individual merchant shop to consumers public page
+	Merchants    []db.Merchant //to display all the merchants
+	Error        Error         //to display an error message IF there is an error msg
+	Products     []db.Product  //to display featured items
+	Cart         cache.Cart    //to display checkout cart
 }
 type Error struct {
 	ErrMsg string
@@ -30,6 +32,7 @@ type Error struct {
 func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 	// Check session; if already logged in then redirect to home page
 	if _, alreadyLoggedIn := a.HaveValidSessionCookie(r); alreadyLoggedIn {
+		fmt.Println("fuck you cookie")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
@@ -85,20 +88,23 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	var cart cache.Cart
+	cart = make([]cache.CartItem, 0)
 	newsessionKey := "U" + uuid.NewV4().String()
 	newsession := cache.NewUserSession(
 		newsessionKey,
 		time.Now().Add(cache.SessionLife*time.Minute),
 		foundUser,
-		nil)
+		cart,
+	)
 	newCookie := &http.Cookie{
 		Name:  "sessionCookie",
 		Value: newsessionKey,
+		Path:  "/",
 	}
-	r.AddCookie(newCookie)
-	a.cacheManager.AddtoCache(newsession)
 
+	http.SetCookie(w, newCookie)
+	a.cacheManager.AddtoCache(newsession)
 	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html", "templates/error.html")
 	if err != nil {
 		log.Fatal(err)
@@ -154,8 +160,12 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	case "M":
 		a.cacheManager.RemoveFromCache(sessionKeyVal, "activeMerchants")
 	}
+	sessionKey.Expires = time.Now()
+	http.SetCookie(w, sessionKey)
+	jData, err := json.Marshal(Response{true})
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jData)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
@@ -236,21 +246,20 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	//w.Write([]byte("201 - User Creation Successful"))
 	newsessionKey := "U" + uuid.NewV4().String()
 	newsession := cache.NewUserSession(
 		newsessionKey,
 		time.Now().Add(cache.SessionLife*time.Minute),
 		u,
-		nil)
+		make([]cache.CartItem, 0))
 	newCookie := &http.Cookie{
 		Name:  "sessionCookie",
 		Value: newsessionKey,
 	}
-	r.AddCookie(newCookie)
+	http.SetCookie(w, newCookie)
 	a.cacheManager.AddtoCache(newsession)
-	http.Redirect(w, r, "/", http.StatusCreated)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (a *App) putUser(w http.ResponseWriter, r *http.Request) {

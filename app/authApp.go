@@ -19,7 +19,7 @@ func (a *App) InitializeCacheManager() {
 			Name:     "DogShiet",
 			Email:    "feecalmatter@hotmail.com",
 			Password: "abc"},
-		&[]cache.CartItem{})
+		make([]cache.CartItem, 0))
 	a.cacheManager.AddtoCache(dummyUserSession)
 }
 
@@ -67,18 +67,20 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool
 	sessionValue, err := r.Cookie("sessionCookie")
 	if err != nil {
 		// No Session Cookie
+		fmt.Println("no session cookie present in haveValidSessionCookie")
 		return nil, false
 	}
-	sessionValStr := sessionValue.String()
+	sessionValStr := sessionValue.Value
 	session, found := a.cacheManager.GetFromCache(sessionValStr, "activeUsers")
 	if !found {
+		fmt.Println("not found in cache manager")
 		session, found = a.cacheManager.GetFromCache(sessionValStr, "activeMerchants")
 	}
 	return session, found
 }
 
 // UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
-func (a *App) UpdateSession(r *http.Request, cart *[]cache.CartItem) error {
+func (a *App) UpdateSession(r *http.Request, cart []cache.CartItem) error {
 	sessionValue, err := r.Cookie("sessionCookie")
 	if err != nil {
 		// No session cookie

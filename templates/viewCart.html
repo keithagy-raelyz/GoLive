@@ -1,80 +1,96 @@
 {{define "cartBody"}}
-<div class="px-4 pt-5 my-5 text-center border-bottom">
-<div class="col-lg-8 mx-auto justify-content-between align-items-center">
-    <table class="table">
-        <thead>
-        <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Name</th>
-            <th scope="col">Price</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Thumbnail</th>
-            <th scope="col">Product Description</th>
-            <th scope="col">Edit</th>
-            <th scope="col">Delete</th>
-            <th scope="col">Total</th>
-        </tr>
-        </thead>
-        <tbody>
+    <div class="px-4 pt-5 my-5 text-center border-bottom">
+        <div class="col-lg-8 mx-auto justify-content-between align-items-center">
+            {{$cart:= .}}
+            {{with .}}
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Thumbnail</th>
+                    <th scope="col">Product Description</th>
+                    <th scope="col">Edit</th>
+                    <th scope="col">Delete</th>
+                    <th scope="col">Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $cart}}
+                    <tr>
+                        <td class="td">{{.Product.Id}}</td>
+                        <td class="td">{{.Product.Name}}</td>
+                        <td class="td">${{.Product.Price}}</td>
+                        <td class="td">{{.Count}}</td>
+                        <td class="td">{{.Product.Thumbnail}}</td>
+                        <td class="td">{{.Product.ProdDesc}}</td>
+                        <td class="td">
+                            <button type="submit" class=" btn btn-primary btn-sm  me-sm-3" onclick=makePUTrequest(this)
+                                    value="{{.Product.Id}}">+
+                            </button>
+                        </td>
+                        <td class="td">
+                            <button type="submit" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDELrequest(this)
+                                    value="{{.Product.Id}}">-
+                            </button>
+                        </td>
+                        <td class="td">${{.Total .Count .Product.Price}}</td>
+                    </tr>
+                {{end}}
+                <tr>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td"></td>
+                    <td class="td">
+                        <button type="button" class=" btn btn-primary btn-sm  me-sm-3"
+                                onclick="location.href='/checkout'">Checkout
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            {{else}}
+                <h1 style="color:red">ADD SOMETHING TO CART FIRST MOFO</h1>
+            {{end}}
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 
-        {{range .}}
-        <tr>
-            <td class="td">{{.Product.Id}}</td>
-            <td class="td">{{.Product.Name}}</td>
-            <td class="td">${{.Product.Price}}</td>
-            <td class="td">{{.Count}}</td>
-            <td class="td">{{.Product.Thumbnail}}</td>
-            <td class="td">{{.Product.ProdDesc}}</td>
-            <td class="td"><button type="submit" class=" btn btn-primary btn-sm  me-sm-3" onclick=makePUTrequest(this) value="{{.Product.Id}}">+</button></td>
-            <td class="td"><button type="submit" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDELrequest(this) value="{{.Product.Id}}">-</button></td>
-            <td class="td">${{.Total .Count .Product.Price}}</td>
-        </tr>
-        {{end}}
-        <tr>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td"></td>
-            <td class="td">
-                <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick="location.href='/checkout'">Checkout</button>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-</div>
-</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script>
-    function makePUTrequest(button) {
-        $.ajax({
-            url: '/cart/'+button.value,
-            type: 'PUT',
-            success: function (response) {
-                if(response.redirect){
-                    window.location='/cart'
+    <script>
+        function makePUTrequest(button) {
+            $.ajax({
+                url: '/cart/' + button.value,
+                type: 'PUT',
+                success: function (response) {
+                    if (response.redirect) {
+                        window.location = '/cart'
+                    }
+                    // Do something with the result
                 }
-                // Do something with the result
-            }
-        });
-    }
-    function makeDELrequest(button){
-        $.ajax({
-            url:'/cart/'+button.value,
-            type:'DEL',
-            success:function(response){
-                console.log(response.redirect)
+            });
+        }
 
-                if(response.redirect){
-                    window.location='/cart'
+        function makeDELrequest(button) {
+            $.ajax({
+                url: '/cart/' + button.value,
+                type: 'DELETE',
+                success: function (response) {
+                    console.log(response.redirect)
+
+                    if (response.redirect) {
+                        window.location = '/cart'
+                    }
                 }
-            }
-        })
-    }
-</script>
-{{end}}
-{{define "styles"}}
-{{end}}
+            })
+        }
+    </script>
+    {{end}}
+    {{define "styles"}}
+    {{end}}

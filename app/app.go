@@ -32,6 +32,7 @@ func (a *App) StartApp() {
 	a.connectDB()
 	a.setRoutes()
 	a.startRouter()
+
 }
 
 // Helpers for starting application.
@@ -54,42 +55,42 @@ func (a *App) setRoutes() {
 	a.InitializeBlacklist()
 	a.router.Use(a.Middleware)
 
-	a.router.HandleFunc("/", a.home).Methods("GET")
+	a.router.HandleFunc("/", a.home).Methods("GET") //OK
 
 	// Login Page
-	a.router.HandleFunc("/login", a.displayLogin).Methods("GET")                    // Display Login Page
-	a.router.HandleFunc("/login/user", a.validateUserLogin).Methods("POST")         // Begin User Validation
-	a.router.HandleFunc("/login/merchant", a.validateMerchantLogin).Methods("POST") // Begin Merchant Validation
-	a.router.HandleFunc("/login", a.logout).Methods("DELETE")                       // Delete session i.e logout
+	a.router.HandleFunc("/login", a.displayLogin).Methods("GET")                    //ok                 // Display Login Page
+	a.router.HandleFunc("/login/user", a.validateUserLogin).Methods("POST")         //ok      // Begin User Validation
+	a.router.HandleFunc("/login/merchant", a.validateMerchantLogin).Methods("POST") //ok // Begin Merchant Validation
+	a.router.HandleFunc("/login", a.logout).Methods("DELETE")                       //ok                  // Delete session i.e logout
 
 	// Get all Merchants and Products
-	a.router.HandleFunc("/merchants", a.allMerch).Methods("GET")
-	a.router.HandleFunc("/products", a.allProd).Methods("GET")
+	a.router.HandleFunc("/merchants", a.allMerch).Methods("GET") //ok
+	a.router.HandleFunc("/products", a.allProd).Methods("GET")   //ok
 	a.router.HandleFunc("/users", a.allUser).Methods("GET")
 
 	// Restful Route for Merchants
-	a.router.HandleFunc("/merchants/{merchantid}", a.getMerch).Methods("GET")
-	a.router.HandleFunc("/merchants", a.postMerch).Methods("POST")
+	a.router.HandleFunc("/merchants/{merchantid}", a.getMerch).Methods("GET") //ok
+	a.router.HandleFunc("/merchants", a.postMerch).Methods("POST")            //ok
 	a.router.HandleFunc("/merchants/{merchantid}", a.putMerch).Methods("PUT")
 	a.router.HandleFunc("/merchants/{merchantid}", a.delMerch).Methods("DELETE")
 
 	// Restful Route for Products
-	a.router.HandleFunc("/products/{productid}", a.getProd).Methods("GET")
+	a.router.HandleFunc("/products/{productid}", a.getProd).Methods("GET") //ok
 	a.router.HandleFunc("/products", a.postProd).Methods("POST")
 	a.router.HandleFunc("/products/{productid}", a.putProd).Methods("PUT")
 	a.router.HandleFunc("/products/{productid}", a.delProd).Methods("DELETE")
 
 	// Restful Route for Users
 	a.router.HandleFunc("/users/{userid}", a.getUser).Methods("GET")
-	a.router.HandleFunc("/users", a.postUser).Methods("POST")
+	a.router.HandleFunc("/users", a.postUser).Methods("POST") //ok
 	a.router.HandleFunc("/users/{userid}", a.putUser).Methods("PUT")
 	a.router.HandleFunc("/users/{userid}", a.delUser).Methods("DELETE")
 
 	// Restful Route for Cart
-	a.router.HandleFunc("/cart", a.getCart).Methods("GET")
-	a.router.HandleFunc("/cart/{productid}", a.postCart).Methods("POST")
-	a.router.HandleFunc("/cart/{productid}", a.updateCart).Methods("PUT")
-	a.router.HandleFunc("/cart/{productid}", a.deleteCart).Methods("DELETE")
+	a.router.HandleFunc("/cart", a.getCart).Methods("GET")                   //ok
+	a.router.HandleFunc("/cart", a.postCart).Methods("POST")                 //
+	a.router.HandleFunc("/cart/{productid}", a.updateCart).Methods("PUT")    //
+	a.router.HandleFunc("/cart/{productid}", a.deleteCart).Methods("DELETE") //
 
 	// Checkout
 	a.router.HandleFunc("/checkout", a.checkOutPage).Methods("GET")
@@ -107,18 +108,41 @@ func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Reque
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
-	if err != nil {
-		log.Fatal(err)
-	}
 	p, _ := a.db.GetAllProducts()
 	data := Data{
 		Products: p,
+	}
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = t.Execute(w, data)
+		if err != nil {
+			fmt.Println(err)
+		}
+		return
+	}
+
+	switch v := activeSession.(type) {
+	case *cache.UserSession:
+		data.User, data.Cart = v.GetSessionOwner()
+	case *cache.MerchantSession:
+		//TODO verify if we require the products of the merchant
+		data.Merchant.MerchantUser = v.GetSessionOwner()
+	}
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
+	if err != nil {
+		log.Fatal(err)
 	}
 	err = t.Execute(w, data)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 }
 
 // func PWcompare(sessionPW string, cachedPW string) bool {

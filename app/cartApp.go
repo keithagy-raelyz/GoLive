@@ -2,7 +2,6 @@ package app
 
 import (
 	"GoLive/cache"
-	"GoLive/db"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -11,54 +10,67 @@ import (
 )
 
 func (a *App) getCart(w http.ResponseWriter, r *http.Request) {
-
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewCart.html", "templates/error.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	cartItem := cache.CartItem{
-		Product: db.Product{
-			Id:        "5",
-			Name:      "Test",
-			Quantity:  5,
-			Thumbnail: "test",
-			Price:     30,
-			ProdDesc:  "fucker",
-			MerchID:   "10",
-			Sales:     0},
-		Count: 5}
-	cart := cache.Cart{cartItem}
-	data := Data{Cart: cart}
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return
-
 	//TODO
-
-	//code requesting for userdata from cookies
-
-	//getcartdata from cache using the userID from cookie
-	if userSession, ok := a.cacheManager.GetFromCache("sessionid", "activeUsers"); !ok {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	} else {
-		user, cart := userSession.(*cache.UserSession).Data()
-		data := Data{User: user, Cart: cart}
-
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewCart.html", "templates/error.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = t.Execute(w, data)
-		if err != nil {
-			log.Fatal(err)
-		}
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
+	data := Data{
+		User: u,
+		Cart: c,
+	}
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewCart.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
 }
 
 func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
+	//destructure the data from the form into a product
+	//if we loaded the product page? did we cache it?
+	//if we destructure, then where are we actually updating it? does this mean we keep a cached copy of the item before
+	//updating the db?
+	//every single user's cart qty vs DB amount
+	//are we even caching pages at the moment? NO
+	//we only cache when someone adds to cart
+	//map[productID]product on expiry, update the DB IF changes have been made changes boolean
+
+	//SCENARIO A (EVERYONE CAN ADD TO CART, DB TRANSACTION WILL VERIFY IF IT CNA GO THROUGH)
+	//eg 10 ppl have varying amounts of shit in their cart, lets say 30x shit
+	// DB only has 10 shit, should this be allowed?
+	//When does the verification / deletion etc should be carried out.
+
+	//SCENARIO B (CACHED variable is king)
+	//5 ppl have added 30 shit into their cart
+	//db has 40 shit
+	//6th person assessed the shit page, should the person see 10? or 40?
+	//
+	//case SEe 10
+	//usercheckout experience is guaranteed.
+	//
+	//expired Cart / Session
+	//needs to update the cached page.
+
+	//Cache value as safeguard
+	//
+
+	//1)  Add to cache only after it has been added to a cart
+	//2)  Add to cache the moment it has been read GET req
+
+	//individual A just loaded apples qty 37
+	//individual B checked out 30 apples
+	//individual A  tries to add 30 apples to his cart.
+
+	// in Scenario 2, in cache memory will reflect 7 and reject the request.
+	// in scenario 1, in cache memory will reflect 7 too? (what if the cache memory expired already)
 
 }
 

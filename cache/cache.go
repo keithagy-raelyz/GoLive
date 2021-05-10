@@ -2,6 +2,7 @@ package cache
 
 import (
 	"GoLive/db"
+	"fmt"
 	"sort"
 	"time"
 )
@@ -33,7 +34,7 @@ func NewCacheManager() *CacheManager {
 }
 
 // NewUserSession takes in required inputs and returns a new UserSession.
-func NewUserSession(sessionKey string, expiry time.Time, user db.User, cart *[]CartItem) *UserSession {
+func NewUserSession(sessionKey string, expiry time.Time, user db.User, cart Cart) *UserSession {
 	return &UserSession{
 		session: session{sessionKey, expiry},
 		owner:   user,
@@ -65,7 +66,7 @@ func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 
 //UpdateCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.updateExpiryTime() method.
 // In the case of a user updating their cart, UpdateCache also updates the respective product cart.
-func (c *CacheManager) UpdateCache(key string, cacheType string, cart *[]CartItem) {
+func (c *CacheManager) UpdateCache(key string, cacheType string, cart Cart) {
 	switch cacheType {
 	case "activeUsers":
 		c.activeUserCache.update(key, cart)
@@ -87,9 +88,8 @@ func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession
 	switch cacheType {
 	case "activeUsers":
 		return c.activeUserCache.get(key)
-
 	case "activeMerchants":
-		return c.merchantCache.get(key)
+		return c.activeUserCache.get(key)
 	case "cachedMerchants":
 		return c.merchantCache.get(key)
 	case "cachedItem":
@@ -184,20 +184,16 @@ func (m *MerchantSession) GetSessionOwner() db.MerchantUser {
 type UserSession struct { // cart CRUD tied to methods on this type.
 	session
 	owner db.User // owner can be User or a Merchant.
-	cart  *[]CartItem
+	cart  Cart
 }
 
-func (u *UserSession) GetSessionOwner() db.User {
-	return u.owner
+func (u *UserSession) GetSessionOwner() (db.User, []CartItem) {
+	return u.owner, u.cart
 }
 
 // UpdateCart updates the session's cart.
-func (u *UserSession) updateCart(cart *[]CartItem) {
+func (u *UserSession) updateCart(cart Cart) {
 	u.cart = cart
-}
-
-func (u *UserSession) Data() (db.User, []CartItem) {
-	return u.owner, *u.cart
 }
 
 //activeUserCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
@@ -214,13 +210,15 @@ func (c *cache) add(payLoad ActiveSession) {
 	key := payLoad.getSessionID()
 	if ok := c.check(key); !ok {
 		(*c)[key] = payLoad
+		fmt.Println((*c)[key], "added into the cache")
+		fmt.Println(key, "key value during storage")
 		go c.tidy(key, payLoad)
 	} else {
 
 	}
 }
 
-func (c *cache) update(key string, cart *[]CartItem) {
+func (c *cache) update(key string, cart Cart) {
 	if c.check(key) {
 		activeSession, _ := (*c)[key]
 		switch v := activeSession.(type) {
@@ -250,6 +248,8 @@ func (c *cache) refresh(payLoad ...ActiveSession) {
 //get returns the ActiveSession stored in the cache given the key.
 func (c *cache) get(key string) (ActiveSession, bool) {
 	activeSession, ok := (*c)[key]
+	fmt.Println((*c)[key], "getting from cache")
+	fmt.Println("key value during access", key)
 	return activeSession, ok
 }
 
@@ -342,4 +342,10 @@ func (c Cart) GrandTotal() float64 {
 		total += cartItem.Value()
 	}
 	return total
+}
+
+func rollback() {
+	//db.exec(add back 1)
+	//mutex.unlock()
+	//count ++
 }

@@ -1,5 +1,7 @@
 package db
 
+import "errors"
+
 // MerchantUser has User's account details, with MerchDesc of storefront.
 type MerchantUser struct {
 	User
@@ -46,11 +48,14 @@ func (d *Database) GetInventory(merchID string) (Merchant, error) {
 		err = merchProdsRows.Scan(&merch.Name, &merch.Id, &merch.MerchDesc, &p.Id, &p.Name, &p.Quantity, &p.Thumbnail, &p.Price, &p.ProdDesc, &p.Sales)
 		if err != nil {
 			// fmt.Println("Scan error", err)
-			return merch, err
+			return Merchant{}, errors.New("Merchant found, no products")
 		}
 		merchProds = append(merchProds, p)
 	}
 	merch.Products = merchProds
+	if merch.Name == "" {
+		return Merchant{}, errors.New("Invalid Merchant")
+	}
 	return merch, nil
 }
 

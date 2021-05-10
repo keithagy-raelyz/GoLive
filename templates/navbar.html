@@ -1,24 +1,55 @@
 {{define "navbar"}}
-{{$id := .Id}}
+    {{$userId := .User.Id}}
+    {{$userName := .User.Name}}
+    {{$merchId := .Merchant.Id}}
+    {{$merchName := .Merchant.Name}}
     <nav class="site-header sticky-top py-1" style="background-color:#FF3434">
         <div class="container d-flex flex-column flex-md-row justify-content-between">
             <a class="py-2" href="#">
                 <img src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" height="30">
             </a>
             <a class="py-2 d-none d-md-inline-block" href="/" style="text-decoration: none;color:white;">Home</a>
-            <a class="py-2 d-none d-md-inline-block" href="/merchants" style="text-decoration: none;color:white;">Merchants</a>
-            <a class="py-2 d-none d-md-inline-block" href="#" style="text-decoration: none;color:white;">Features</a>
-            <a class="py-2 d-none d-md-inline-block" href="#" style="text-decoration: none;color:white;">Enterprise</a>
-            <a class="py-2 d-none d-md-inline-block" href="#" style="text-decoration: none;color:white;">Support</a>
-            <a class="py-2 d-none d-md-inline-block" href="#" style="text-decoration: none;color:white;">Pricing</a>
+            <a class="py-2 d-none d-md-inline-block" href="/merchants"
+               style="text-decoration: none;color:white;">Merchants</a>
+            <a class="py-2 d-none d-md-inline-block" href="/products"
+               style="text-decoration: none;color:white;">Products</a>
             <a class="py-2 d-none d-md-inline-block" href="/cart" style="text-decoration: none;color:white;">Cart</a>
 
-            {{with .Name}}
-            <a class="py-2 d-none d-md-inline-block" href="/users/{{$id}}" style="text-decoration: none;color:white;">{{.}}</a>
-            <a class="py-2 d-none d-md-inline-block" href="/logout" style="text-decoration: none;color:white;">Logout</a>
+            {{with .User.Name}}
+                <a class="py-2 d-none d-md-inline-block" href="/users/{{$userId}}"
+                   style="text-decoration: none;color:white;">{{$userName}}</a>
+                <div class="py-2 d-none d-md-inline-block">
+                    <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDELrequest()>Logout
+                    </button>
+                </div>
             {{else}}
-            <a class="py-2 d-none d-md-inline-block" href="/login" style="text-decoration: none;color:white;">Login</a>
+                {{with .Merchant.Name}}
+                    <a class="py-2 d-none d-md-inline-block" href="/users/{{$merchId}}"
+                       style="text-decoration: none;color:white;">{{$merchName}}</a>
+                    <div class="py-2 d-none d-md-inline-block">
+                        <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDELrequest()>Logout
+                        </button>
+                    </div>
+                {{else}}
+                    <a class="py-2 d-none d-md-inline-block" href="/login"
+                       style="text-decoration: none;color:white;">Login</a>
+                {{end}}
             {{end}}
         </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script>function makeDELrequest() {
+                $.ajax({
+                    url: '/login',
+                    type: 'DELETE',
+                    success: function (response) {
+                        console.log(response.redirect)
+                        console.log(response)
+                        if (response.redirect) {
+                            window.location = '/'
+                        }
+                    }
+                })
+            }</script>
     </nav>
+
 {{end}}
