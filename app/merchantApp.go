@@ -35,8 +35,6 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return
-
 }
 
 // GET method - List products
@@ -88,7 +86,6 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return
 }
 
 // POST method - Add a Merchant (ADMIN ONLY)

@@ -16,16 +16,17 @@ func (a *App) getCart(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cartItem := cache.CartItem{db.Product{
-		Id:        "5",
-		Name:      "Test",
-		Quantity:  5,
-		Thumbnail: "test",
-		Price:     30,
-		ProdDesc:  "fucker",
-		MerchID:   "10",
-		Sales:     0,
-	}, 5}
+	cartItem := cache.CartItem{
+		Product: db.Product{
+			Id:        "5",
+			Name:      "Test",
+			Quantity:  5,
+			Thumbnail: "test",
+			Price:     30,
+			ProdDesc:  "fucker",
+			MerchID:   "10",
+			Sales:     0},
+		Count: 5}
 	cart := cache.Cart{cartItem}
 	data := Data{Cart: cart}
 	err = t.Execute(w, data)
