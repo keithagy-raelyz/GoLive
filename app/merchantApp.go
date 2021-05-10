@@ -1,10 +1,13 @@
 package app
 
 import (
+	"GoLive/cache"
 	"fmt"
+	uuid "github.com/satori/go.uuid"
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"strings"
 
@@ -20,20 +23,39 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
-
+	data := Data{Merchants: merchants}
 	// TODO: Execute some template passing in merchants slice
 	fmt.Println("Merchants:", merchants)
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewAllMerchants.html")
+		if err != nil {
+			log.Fatal(err)
+		}
 
+		err = t.Execute(w, data)
+		if err != nil {
+			fmt.Println(err)
+		}
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	//w.Write([]byte("200 - Displaying all merchants"))
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewAllMerchants.html", "templates/error.html")
+	switch v := activeSession.(type) {
+	case *cache.UserSession:
+		data.User, data.Cart = v.GetSessionOwner()
+	case *cache.MerchantSession:
+		//TODO verify if we require the products of the merchant
+		data.Merchant.MerchantUser = v.GetSessionOwner()
+	}
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewAllMerchants.html")
 	if err != nil {
 		log.Fatal(err)
 	}
-	data := Data{Merchants: merchants}
 	err = t.Execute(w, data)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
 
@@ -43,37 +65,75 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	// Verify valid merchant ID
 	merchID := params["merchantid"]
-
+	data := Data{}
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
 	// TODO inventory has to be renamed to accurately reflect no rows were found
-	merchant, err := a.db.GetInventory(merchID)
-	if err != nil {
-		// Merchant exist but no product
-		fmt.Println("Blank inventory for merchid:", merchID, merchant)
-		w.WriteHeader(http.StatusOK)
-		//w.Write([]byte("200 - Valid merchID but empty inventory"))
-		// fmt.Println("200, empty inv, merchID:", merchID)
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewMerchantProducts.html", "templates/error.html")
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		fmt.Println("session is not valid")
+		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewMerchantProducts.html")
 		if err != nil {
 			log.Fatal(err)
 		}
-		data := Data{Merchant: merchant}
+
 		err = t.Execute(w, data)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		return
 	}
-
-	//TODO is this logic correct?
-	if merchant.Products == nil {
-		// Invalid Merchant ID
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("404 - Invalid merchID"))
-		// fmt.Println("404, invalid merchID, merchID:", merchID)
-		return
+	switch v := activeSession.(type) {
+	case *cache.UserSession:
+		data.User, data.Cart = v.GetSessionOwner()
+	case *cache.MerchantSession:
+		//TODO verify if we require the products of the merchant this is wrong
+		data.Merchant.MerchantUser = v.GetSessionOwner()
 	}
+
+	merchant, err := a.db.GetInventory(merchID)
+	if err != nil {
+		switch err.Error() {
+		case "Invalid Merchant":
+			// Invalid Merchant ID
+			w.WriteHeader(http.StatusNotFound)
+			//w.Write([]byte("404 - Invalid merchID"))
+			// fmt.Println("404, invalid merchID, merchID:", merchID)
+			t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewMerchantProducts.html", "templates/error.html")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			data.MerchantShop = merchant
+			data.Error = Error{ErrMsg: "Invalid Merchant"}
+			err = t.Execute(w, data)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return
+		case "Merchant found, no products":
+			// Merchant exist but no product
+			fmt.Println("Blank inventory for merchid:", merchID, merchant)
+			w.WriteHeader(http.StatusOK)
+			//w.Write([]byte("200 - Valid merchID but empty inventory"))
+			// fmt.Println("200, empty inv, merchID:", merchID)
+			t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewMerchantProducts.html", "templates/error.html")
+			if err != nil {
+				log.Fatal(err)
+			}
+			data.MerchantShop = merchant
+			data.Error = Error{ErrMsg: "Merchant has nothing for sale at the moment"}
+			err = t.Execute(w, data)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return
+		default:
+			//TODO handle default error
+
+		}
+	}
+
 	// fmt.Println("Inventory for merchID:", merchID, inventory)
 	w.WriteHeader(http.StatusOK)
 	//w.Write([]byte("200 - Valid merchant ID, displaying store"))
@@ -81,7 +141,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	data := Data{Merchant: merchant}
+	data.MerchantShop = merchant
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Fatal(err)
@@ -135,10 +195,25 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//send the err msg back (err = errmsg)
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("201 - User Creation Successful"))
-		return
 
+		//w.Write([]byte("201 - User Creation Successful"))
+
+		newsessionKey := "M" + uuid.NewV4().String()
+		newsession := cache.NewMerchSession(
+			newsessionKey,
+			time.Now().Add(cache.SessionLife*time.Minute),
+			m,
+		)
+		newCookie := &http.Cookie{
+			Name:  "sessionCookie",
+			Value: newsessionKey,
+			Path:  "/",
+		}
+
+		http.SetCookie(w, newCookie)
+		a.cacheManager.AddtoCache(newsession)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
 
 	w.WriteHeader(http.StatusBadRequest)

@@ -1,0 +1,38 @@
+{{define "productBody"}}
+    <div class="album py-5 bg-light">
+        <div class="container">
+
+            <div class="row">
+                {{range .}}
+                    <div class="col-md-4">
+                        <div class="card mb-4 shadow-sm">
+                            <svg class="bd-placeholder-img card-img-top" width="100%" height="225"
+                                 xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false"
+                                 role="img" aria-label="Placeholder: Thumbnail">
+                                <rect width="100%" height="100%" fill="url(#pat1)"></rect>
+                                <pattern id="pat1" patternContentUnits="objectBoundingBox" width="100%" height="100%">
+                                    <image height="1" width="1" preserveAspectRatio="none"
+                                           href="{{.Thumbnail}}"/>
+                                </pattern>
+                                <!--                            <text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text>-->
+                            </svg>
+                            <div class="card-body">
+                                <p class="card-text">{{.Name}}</p>
+                                <p class="card-text">{{.ProdDesc}}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.href='/products/{{.Id}}'">View</button>
+
+                                    </div>
+                                    <small class="text-muted">${{.Price}}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+{{end}}
+{{define "styles"}}
+{{end}}

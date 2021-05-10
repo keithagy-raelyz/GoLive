@@ -71,6 +71,7 @@ func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 
 	js, _ := json.Marshal(data)
 	w.Header().Set("Content-Type", "application/json")
+
 	w.Write(js)
 }
 
