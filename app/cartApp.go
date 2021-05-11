@@ -2,9 +2,9 @@ package app
 
 import (
 	"GoLive/cache"
-	"GoLive/db"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"html/template"
 	"log"
 	"net/http"
@@ -51,11 +51,7 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	data := Data{
-		User: u,
-		Cart: c,
-	}
+	//u, _ := activeSession.(*cache.UserSession).GetSessionOwner()
 
 	//Obtain item Data
 	err := r.ParseForm()
@@ -63,18 +59,8 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 	id := r.FormValue("Id")
-	p, ok := a.cacheManager.GetFromCache(id, "Product")
-	if !ok {
-		p, err = a.db.GetProduct(id)
-		if err != nil {
-			fmt.Println(err)
-		}
-		a.cacheManager.AddtoCache(p)
-	}
 
-	//Add item data to cart
-	data.Cart = append(data.Cart, cache.CartItem{p.(db.Product), 1})
-	//Update session ID here, UPdate item cache
+	a.cacheManager.UpdateCart(activeSession, id, "append")
 
 	http.Redirect(w, r, "/cart", http.StatusSeeOther)
 
@@ -111,42 +97,60 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
 
+	params := mux.Vars(r)
+	productID := params["productid"]
+
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {
 		fmt.Println("session is not valid")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	data := Data{
-		User: u,
-		Cart: c,
-	}
+	//u, c := activeSession.(*cache.UserSession).GetSessionOwner()
+	//for _,cartitem:= range c{
+	//	caritem
+	//}
 	//Add to cart and udpate in the session
 
-	jData, err := json.Marshal(Response{true})
-	if err != nil {
-		fmt.Println(err)
-	}
+	a.cacheManager.UpdateCart(activeSession, productID, "+")
+	jData, _ := json.Marshal(Response{true})
+
+	//data := Data{
+	//	User: u,
+	//	Cart: c,
+	//}
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewCart.html")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//err = t.Execute(w, data)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jData)
 }
 
 func (a *App) deleteCart(w http.ResponseWriter, r *http.Request) {
-
+	params := mux.Vars(r)
+	productID := params["productid"]
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {
 		fmt.Println("session is not valid")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	data := Data{
-		User: u,
-		Cart: c,
-	}
-	//Delete one from carrt and update in the cache
-
+	//u, c := activeSession.(*cache.UserSession).GetSessionOwner()
+	//data := Data{
+	//	User: u,
+	//	Cart: c,
+	//}
+	////Delete one from carrt and update in the cache
+	//
+	a.cacheManager.UpdateCart(activeSession, productID, "-")
 	jData, err := json.Marshal(Response{true})
 	if err != nil {
 		fmt.Println(err)
