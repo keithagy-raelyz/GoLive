@@ -44,26 +44,6 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 	//we only cache when someone adds to cart
 	//map[productID]product on expiry, update the DB IF changes have been made changes boolean
 
-	//Obtain user session Data, redirect if invalid
-	activeSession, ok := a.HaveValidSessionCookie(r)
-	if !ok {
-		fmt.Println("session is not valid")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	//u, _ := activeSession.(*cache.UserSession).GetSessionOwner()
-
-	//Obtain item Data
-	err := r.ParseForm()
-	if err != nil {
-		fmt.Println(err)
-	}
-	id := r.FormValue("Id")
-
-	a.cacheManager.UpdateCart(activeSession, id, "append")
-
-	http.Redirect(w, r, "/cart", http.StatusSeeOther)
-
 	//SCENARIO A (EVERYONE CAN ADD TO CART, DB TRANSACTION WILL VERIFY IF IT CNA GO THROUGH)
 	//eg 10 ppl have varying amounts of shit in their cart, lets say 30x shit
 	// DB only has 10 shit, should this be allowed?
@@ -96,67 +76,16 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
-
-	params := mux.Vars(r)
-	productID := params["productid"]
-
-	activeSession, ok := a.HaveValidSessionCookie(r)
-	if !ok {
-		fmt.Println("session is not valid")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	//u, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	//for _,cartitem:= range c{
-	//	caritem
-	//}
-	//Add to cart and udpate in the session
-
-	a.cacheManager.UpdateCart(activeSession, productID, "+")
-	jData, _ := json.Marshal(Response{true})
-
-	//data := Data{
-	//	User: u,
-	//	Cart: c,
-	//}
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewCart.html")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//err = t.Execute(w, data)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jData)
-}
-
-func (a *App) deleteCart(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	productID := params["productid"]
-	activeSession, ok := a.HaveValidSessionCookie(r)
-	if !ok {
-		fmt.Println("session is not valid")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-	//u, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	//data := Data{
-	//	User: u,
-	//	Cart: c,
-	//}
-	////Delete one from carrt and update in the cache
-	//
-	a.cacheManager.UpdateCart(activeSession, productID, "-")
 	jData, err := json.Marshal(Response{true})
 	if err != nil {
 		fmt.Println(err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jData)
+}
+
+func (a *App) deleteCart(w http.ResponseWriter, r *http.Request) {
+
 }
 
 type Response struct {
