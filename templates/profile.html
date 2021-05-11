@@ -1,3 +1,45 @@
 {{define "profile}}
+<main class="form-signin register">
+    <form action="/merchants" method="post">
+        <img class="mb-4" src="https://i.ibb.co/tMjjDyZ/android-chrome-512x512.png" alt="" width="150" height="150">
+        <h1 class="h3 mb-3 fw-normal login">Merchant Registration</h1>
+        <label id="psuedoLink" for="toggleContainer">Click here for User</label>
+        {{with .ErrMsg}}
+        <p style="color:red;font-size: larger">{{.}}</p>
+        {{end}}
+        <div class="form-floating">
+            <input name="username" type="text" class="form-control" id="floatingInput" placeholder="username"
+                   required>
 
+            <label for="floatingInput">Username</label>
+        </div>
+        <div class="form-floating">
+            <input name="email" type="email" class="form-control" id="floatingInput" placeholder="abc@hotmail.com"
+                   required>
+
+            <label for="floatingInput">Email</label>
+        </div>
+        <div class="form-floating">
+            <input name="pw1" type="password" class="form-control" id="floatingPassword" placeholder="Password"
+                   required>
+            <label for="floatingPassword">Password</label>
+        </div>
+        <div class="form-floating">
+            <input name="pw2" type="password" class="form-control" id="floatingInput" placeholder="Password"
+                   required>
+
+            <label for="floatingInput">Password</label>
+        </div>
+        <div class="form-floating">
+            <input name="MerchDesc" type="text" class="form-control" id="floatingInput"
+                   placeholder="Merchant Description"
+                   required>
+
+            <label for="floatingInput">Merchant Description</label>
+        </div>
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Register</button>
+        <label id="psuedoLink" for="toggleUser">Already Registered? Click here to Sign in</label>
+        <p class="mt-5 mb-3 text-muted">© 2017–2021</p>
+    </form>
+</main>
 {{end}}

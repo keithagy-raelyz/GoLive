@@ -2,6 +2,7 @@ package cache
 
 import (
 	"GoLive/db"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -16,18 +17,20 @@ type CacheManager struct {
 	activeUserCache activeUserCache // key: session value; value: see session definition below.
 	merchantCache   merchantCache   // key: Pointer to cache; value: access frequency.
 	itemsCache      itemCache       // Populates home page.
+	database        *db.Database
 }
 
 // NewCacheManager returns a pointer to an initialized CacheManager.
-func NewCacheManager() *CacheManager {
+func NewCacheManager(database *db.Database) *CacheManager {
 	newAuC := activeUserCache{make(map[string]ActiveSession)}
 	newMC := merchantCache{make(map[string]ActiveSession)}
-	newIC := itemCache{make(map[string]ActiveSession), make([]db.Product, 0)}
+	newIC := itemCache{make(map[string]cachedItem), make([]db.Product, 0)}
 
 	newCM := &CacheManager{
 		activeUserCache: newAuC,
 		merchantCache:   newMC,
 		itemsCache:      newIC,
+		database:        database,
 	}
 
 	return newCM
@@ -59,23 +62,21 @@ func (c *CacheManager) AddtoCache(payLoad ActiveSession) {
 		c.activeUserCache.add(v)
 	case *cachedMerchant:
 		c.merchantCache.add(v)
-	case *cachedItem:
-		c.itemsCache.add(v)
+
 	}
 }
 
 //UpdateCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.updateExpiryTime() method.
 // In the case of a user updating their cart, UpdateCache also updates the respective product cart.
-func (c *CacheManager) UpdateCache(key string, cacheType string, cart Cart) {
-	switch cacheType {
-	case "activeUsers":
-		c.activeUserCache.update(key, cart)
-	case "activeMerchants":
-		c.activeUserCache.update(key, nil)
-	case "cachedMerchants":
-		c.activeUserCache.update(key, nil)
-	case "cachedItem":
-		c.activeUserCache.update(key, nil)
+func (c *CacheManager) UpdateCart(payLoad ActiveSession, productID string, operator string) {
+	switch v := payLoad.(type) {
+	case *UserSession:
+		cachedItem, _ := c.itemsCache.get(productID, c.database)
+		c.activeUserCache.update(v.getSessionID(), productID, operator, cachedItem)
+	case *MerchantSession:
+		c.activeUserCache.update(v.getSessionID(), "", "", cachedItem{})
+	case *cachedMerchant:
+		c.activeUserCache.update(v.getSessionID(), "", "", cachedItem{})
 	}
 }
 
@@ -92,8 +93,7 @@ func (c *CacheManager) GetFromCache(key string, cacheType string) (ActiveSession
 		return c.activeUserCache.get(key)
 	case "cachedMerchants":
 		return c.merchantCache.get(key)
-	case "cachedItem":
-		return c.itemsCache.get(key)
+
 	}
 	return nil, false
 }
@@ -107,8 +107,7 @@ func (c *CacheManager) RemoveFromCache(key string, cacheType string) {
 		c.activeUserCache.remove(key)
 	case "cachedMerchants":
 		c.merchantCache.remove(key)
-	case "cachedItem":
-		c.itemsCache.remove(key)
+
 	}
 
 }
@@ -122,8 +121,7 @@ func (c *CacheManager) UpdateCacheFromDB(payLoad ...ActiveSession) {
 		c.activeUserCache.refresh(v)
 	case *cachedMerchant:
 		c.merchantCache.refresh(v)
-	case *cachedItem:
-		c.itemsCache.update(v)
+
 	}
 }
 
@@ -192,8 +190,39 @@ func (u *UserSession) GetSessionOwner() (db.User, []CartItem) {
 }
 
 // UpdateCart updates the session's cart.
-func (u *UserSession) updateCart(cart Cart) {
-	u.cart = cart
+func (u *UserSession) updateCart(productID string, operator string, product *db.Product) {
+	switch operator {
+	case "+":
+		for i, _ := range u.cart {
+			if u.cart[i].Product.Id == productID {
+				u.cart[i].Count++
+			}
+		}
+	case "-":
+		for i, _ := range u.cart {
+			if u.cart[i].Product.Id == productID {
+				u.cart[i].Count--
+				if u.cart[i].Count == 0 {
+					if i == 0 {
+						u.cart = u.cart[i+1:]
+					} else if i == len(u.cart)-1 {
+						u.cart = u.cart[0:i]
+					} else {
+						firsthalf := u.cart[0:i]
+						secondhalf := u.cart[i+1:]
+						u.cart = append(firsthalf, secondhalf...)
+					}
+				}
+			}
+		}
+
+	case "append":
+		cartItem := CartItem{
+			*product,
+			1,
+		}
+		u.cart = append(u.cart, cartItem)
+	}
 }
 
 //activeUserCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
@@ -218,18 +247,17 @@ func (c *cache) add(payLoad ActiveSession) {
 	}
 }
 
-func (c *cache) update(key string, cart Cart) {
+func (c *cache) update(key string, productID string, operator string, cachedItem cachedItem) {
 	if c.check(key) {
 		activeSession, _ := (*c)[key]
 		switch v := activeSession.(type) {
 		case *UserSession:
-			v.updateCart(cart)
+			v.updateCart(productID, operator, cachedItem.item)
 		case *MerchantSession:
 			//c.activeUserCache.refresh(v)
 		case *cachedMerchant:
 			//c.merchantCache.refresh(v)
-		case *cachedItem:
-			//c.itemsCache.update(v)
+
 		}
 
 	}
@@ -288,36 +316,24 @@ type merchantCache struct {
 	cache
 }
 
-//cachedItem stores the information of a product and its session.
-type cachedItem struct {
-	session
-	item db.Product
-}
+////UpdateSorted flushes the sorted array with the new data from the DB. It gets called when the cache is flushed.
+//func (i *itemCache) updateSorted() {
+//	preSort := make([]db.Product, 30)
+//	for _, as := range i.cache {
+//		preSort = append(preSort, (as.(*cachedItem)).item)
+//	}
+//	i.sort()
+//}
 
-//itemCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
-type itemCache struct {
-	cache
-	sorted []db.Product
-}
-
-//UpdateSorted flushes the sorted array with the new data from the DB. It gets called when the cache is flushed.
-func (i *itemCache) updateSorted() {
-	preSort := make([]db.Product, 30)
-	for _, as := range i.cache {
-		preSort = append(preSort, (as.(*cachedItem)).item)
-	}
-	i.sort()
-}
-
-//update override the default update method for caches.
-func (i *itemCache) update(payLoad ...ActiveSession) {
-	flushedMap := make(map[string]ActiveSession)
-	for _, activeSession := range payLoad {
-		flushedMap[activeSession.getSessionID()] = activeSession
-	}
-	i.cache = flushedMap
-	i.updateSorted()
-}
+////update override the default update method for caches.
+//func (i *itemCache) update(payLoad ...ActiveSession) {
+//	flushedMap := make(map[string]ActiveSession)
+//	for _, activeSession := range payLoad {
+//		flushedMap[activeSession.getSessionID()] = activeSession
+//	}
+//	i.cache = flushedMap
+//	i.updateSorted()
+//}
 
 //sort sorts the sorted item cache.
 func (i *itemCache) sort() {
@@ -348,4 +364,127 @@ func rollback() {
 	//db.exec(add back 1)
 	//mutex.unlock()
 	//count ++
+}
+
+//cachedItem stores the information of a product and its session.
+type cachedItem struct {
+	item   *db.Product
+	expiry time.Time
+}
+
+func (c *cachedItem) updateExpiryTime(updatedTime time.Time) {
+	c.expiry = updatedTime
+}
+
+func (c *cachedItem) monitor() {
+	for {
+		sleeptime := time.Until(c.expiry)
+		time.Sleep(sleeptime)
+		if c.expiry.Before(time.Now()) {
+			return
+		}
+	}
+}
+func (c *CacheManager) UpdateItemInCache(prodID string, operator string, amt int) error {
+	switch operator {
+	case "+":
+		return (*c).itemsCache.increase(prodID, amt, c.database)
+	case "-":
+		return (*c).itemsCache.decrease(prodID, amt, c.database)
+	default:
+		return errors.New("invalid operator supplied")
+	}
+}
+
+func (i *itemCache) increase(prodID string, amt int, database *db.Database) error {
+	cachedItem, err := i.get(prodID, database)
+	if err != nil {
+		return err
+	}
+	cachedItem.addQty(amt)
+	//update DB return DB err if any
+	return database.UpdateProduct(*cachedItem.item)
+}
+
+func (i *itemCache) decrease(prodID string, amt int, database *db.Database) error {
+	cachedItem, err := i.get(prodID, database)
+	if err != nil {
+		return err
+	}
+	cachedItem.reduceQty(amt)
+	//update DB return DB err if any
+	return database.UpdateProduct(*cachedItem.item)
+}
+
+//func (c *CacheManager) CheckItemPresence(prodID string) (cachedItem, bool) {
+//	cachedItem, ok := (*c).itemsCache.CheckItem(prodID)
+//	if !ok {
+//		//query db
+//
+//		(*c).itemsCache.AddItemFromDB(cachedItem)
+//	}
+//	return cachedItem, ok
+//}
+
+func (c *CacheManager) GetItemFromCache(prodID string) (cachedItem, error) {
+	return (*c).itemsCache.get(prodID, c.database)
+}
+
+func (i *itemCache) get(prodID string, database *db.Database) (cachedItem, error) {
+	if cachedItem, ok := ((*i).itemsCache[prodID]); !ok {
+
+		//Additem gets fromt he DB
+		cachedItem, err := i.AddItemFromDB(prodID, database)
+		if err != nil {
+			return cachedItem, err
+		}
+
+		//additemtocache
+		(*i).itemsCache[cachedItem.item.Id] = cachedItem
+		go i.tidy(cachedItem.item.Id)
+		return cachedItem, nil
+	} else {
+		cachedItem.updateExpiryTime(time.Now().Add(SessionLife * time.Minute))
+		((*i).itemsCache[prodID]) = cachedItem
+		return cachedItem, nil
+	}
+}
+func (i *itemCache) CheckItem(prodID string) (cachedItem, bool) {
+	cachedItem, ok := (*i).itemsCache[prodID]
+	return cachedItem, ok
+}
+
+func (i *itemCache) AddItemFromDB(prodID string, db *db.Database) (cachedItem, error) {
+	//DB interaction with error returned return error here
+	prod, err := db.GetProduct(prodID)
+	if err != nil {
+		return cachedItem{}, err
+	}
+	cachedItem := cachedItem{&prod, time.Now().Add(SessionLife * time.Minute)}
+	return cachedItem, nil
+}
+
+func (i *itemCache) tidy(prodID string) {
+	item := (*i).itemsCache[prodID]
+	item.monitor()
+	delete((*i).itemsCache, prodID)
+
+}
+
+//itemCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
+type itemCache struct {
+	itemsCache map[string]cachedItem
+	sorted     []db.Product
+}
+
+func (c *cachedItem) getID() string {
+	return c.item.Id
+}
+
+func (c *cachedItem) addQty(amt int) {
+	c.item.Quantity += amt
+}
+
+func (c *cachedItem) reduceQty(amt int) {
+	c.item.Quantity -= amt
 }

@@ -35,7 +35,10 @@
                 </div>
 
                 <div class="col-sm-4 justify-content-end align-items-center">
-                    <button type="submit" class="d-flex btn btn-primary btn-lg  me-sm-3 justify-content-end">Add To Cart</button>
+                    <form id="cart" hidden action="/cart" method="post">
+                        <input name="Id" value="{{.Id}}"hidden/>
+                        </form>
+                    <button form="cart" type="submit" class="d-flex btn btn-primary btn-lg  me-sm-3 justify-content-end">Add To Cart</button>
                 </div>
             </div>
         </div>
