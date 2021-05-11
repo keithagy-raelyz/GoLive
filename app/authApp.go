@@ -10,7 +10,7 @@ import (
 )
 
 func (a *App) InitializeCacheManager() {
-	a.cacheManager = cache.NewCacheManager()
+	a.cacheManager = cache.NewCacheManager(a.db)
 	dummyUserSession := cache.NewUserSession(
 		"6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
 		time.Now().Add(30*time.Minute),
@@ -79,21 +79,39 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool
 	return session, found
 }
 
-// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
-func (a *App) UpdateSession(r *http.Request, cart []cache.CartItem) error {
-	sessionValue, err := r.Cookie("sessionCookie")
-	if err != nil {
-		// No session cookie
-		return err
-	}
-	sessionValStr := sessionValue.String()
-	cacheType := ""
-	switch string(sessionValStr[0]) {
-	case "U":
-		cacheType = "activeUsers"
-	case "M":
-		cacheType = "activeMerchants"
-	}
-	a.cacheManager.UpdateCache(sessionValStr, cacheType, cart)
-	return nil
+//// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.
+//func (a *App) UpdateSession(r *http.Request, cart []cache.CartItem) error {
+//	sessionValue, err := r.Cookie("sessionCookie")
+//	if err != nil {
+//		// No session cookie
+//		return err
+//	}
+//	sessionValStr := sessionValue.String()
+//	cacheType := ""
+//	switch string(sessionValStr[0]) {
+//	case "U":
+//		cacheType = "activeUsers"
+//	case "M":
+//		cacheType = "activeMerchants"
+//	}
+//	a.cacheManager.UpdateCart(sessionValStr, cacheType, cart)
+//	return nil
+//}
+
+func (a *App) UpdateSession(r *http.Request) {
+	//sessionValue, err := r.Cookie("sessionCookie")
+	//if err != nil {
+	//	// No session cookie
+	//	return err
+	//}
+	//sessionValStr := sessionValue.String()
+	//cacheType := ""
+	//switch string(sessionValStr[0]) {
+	//case "U":
+	//	cacheType = "activeUsers"
+	//case "M":
+	//	cacheType = "activeMerchants"
+	//}
+	//
+	//return nil
 }

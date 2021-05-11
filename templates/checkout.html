@@ -192,6 +192,7 @@
     checkoutButton.addEventListener("click", function () {
         fetch("/checkout", {
             method: "POST",
+            body: "{{.}}",
         })
             .then(function (response) {
                 return response.json();

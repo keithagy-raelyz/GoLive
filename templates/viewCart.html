@@ -24,7 +24,7 @@
                         <td class="td">{{.Product.Name}}</td>
                         <td class="td">${{.Product.Price}}</td>
                         <td class="td">{{.Count}}</td>
-                        <td class="td">{{.Product.Thumbnail}}</td>
+                        <td class="td"><img src="{{.Product.Thumbnail}}"/></td>
                         <td class="td">{{.Product.ProdDesc}}</td>
                         <td class="td">
                             <button type="submit" class=" btn btn-primary btn-sm  me-sm-3" onclick=makePUTrequest(this)
