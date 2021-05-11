@@ -117,16 +117,7 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 	}
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {
-		fmt.Println("session is not valid")
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = t.Execute(w, data)
-		if err != nil {
-			fmt.Println(err)
-		}
+		parseHomePage(&w, data)
 		return
 	}
 
@@ -137,20 +128,16 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 		//TODO verify if we require the products of the merchant
 		data.Merchant.MerchantUser = v.GetSessionOwner()
 	}
+	parseHomePage(&w, data)
+}
+
+func parseHomePage(w *http.ResponseWriter, data Data) {
 	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html")
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = t.Execute(w, data)
+	err = t.Execute(*w, data)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }
-
-// func PWcompare(sessionPW string, cachedPW string) bool {
-// 	if sessionPW == cachedPW {
-// 		return true
-// 	}
-// 	return false
-// }

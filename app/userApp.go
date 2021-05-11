@@ -30,23 +30,24 @@ type Error struct {
 	ErrMsg string
 }
 
+const (
+	InvalidCredentials = "Invalid Username or Password"
+	EmptyUsername      = "Username cannot be empty"
+	UserExists         = "Username is in use"
+	PasswordMismatch   = "Passwords are not the same"
+	EmptyEmail         = "Email is required"
+	DBError            = "Internal Server Error Please try again later"
+)
+
 func (a *App) displayLogin(w http.ResponseWriter, r *http.Request) {
 	// Check session; if already logged in then redirect to home page
 	if _, alreadyLoggedIn := a.HaveValidSessionCookie(r); alreadyLoggedIn {
-		fmt.Println("fuck you cookie")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	// ExecuteTemplate
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
-	if err != nil {
-		log.Fatal(err)
-	}
 	data := Data{}
-	err = t.Execute(w, data)
-	if err != nil {
-		log.Fatal(err)
-	}
+	parseLoginPage(&w, data)
 }
 
 func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
@@ -60,33 +61,17 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 
 	foundUser, err := a.db.GetUser(username)
 	if err != nil {
-		fmt.Println(err, "error in get user")
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-		data := Data{Error: Error{"Piece of shit who can't even remember your password / username"}}
-		err = t.Execute(w, data)
-		if err != nil {
-			log.Fatal(err)
-		}
+		data := Data{Error: Error{InvalidCredentials}}
+		parseLoginPage(&w, data)
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword(hashedPW, []byte(foundUser.Password)); err != nil {
-		fmt.Println(foundUser.Password, "not correct")
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-		data := Data{Error: Error{"Piece of shit who can't even remember your password / username"}}
-		err = t.Execute(w, data)
-		if err != nil {
-			log.Fatal(err)
-		}
+		data := Data{Error: Error{InvalidCredentials}}
+		parseLoginPage(&w, data)
 		return
 	}
 	var cart = make([]cache.CartItem, 0)
@@ -105,16 +90,9 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, newCookie)
 	a.cacheManager.AddtoCache(newsession)
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/body.html", "templates/error.html")
-	if err != nil {
-		log.Fatal(err)
-	}
 	p, _ := a.db.GetAllProducts()
 	data := Data{User: foundUser, Products: p}
-	err = t.Execute(w, data)
-	if err != nil {
-		fmt.Println(err)
-	}
+	parseHomePage(&w, data)
 }
 
 func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +147,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
-
+	//TODO display all Users
 	users, err := a.db.GetUsers()
 	if err != nil {
 		log.Fatal(err)
@@ -182,24 +160,26 @@ func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	// Verify valid merchant ID
+	// Verify valid ID
 	userID := params["userid"]
 	var u db.User
 	u, err := a.db.GetUser(userID)
 	if err != nil {
-		fmt.Println(err)
 		// Invalid user ID inputted
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - No user for input USERID"))
 		return
 	}
-	fmt.Println(u, "printing user")
+	fmt.Println(u)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Valid merchant ID, displaying store"))
 }
 
 func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
 	username := r.FormValue("username")
 	email := strings.ToLower(r.FormValue("email"))
 	pw1 := r.FormValue("pw1")
@@ -210,23 +190,23 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 	u.Name = username
 	u.Email = email
 	if u.Name == "" {
-		fmt.Println("Empty user name")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad Request"))
+		data := Data{Error: Error{EmptyUsername}}
+		parseLoginPage(&w, data)
 		return
 	}
 	if u.Email == "" {
-		fmt.Println("Empty email")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad Request"))
+		data := Data{Error: Error{EmptyEmail}}
+		parseLoginPage(&w, data)
 		return
 	}
-	err := a.db.CheckUser(u)
+	err = a.db.CheckUser(u)
 	if err != nil {
 		//send the err msg back (err = errmsg)
-		fmt.Println(err, "CheckUser error")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad Request"))
+		data := Data{Error: Error{UserExists}}
+		parseLoginPage(&w, data)
 		return
 	}
 	if pw1 != pw2 {
@@ -234,15 +214,15 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 		//data := Data{nil, ErrorMsg{"color:red", "Password entered are different"}, ErrorMsg{"display:none", ""}, ErrorMsg{"display:block", ""}, 0, nil}
 		//t.Execute(w, data)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Repeated PW"))
+		data := Data{Error: Error{PasswordMismatch}}
+		parseLoginPage(&w, data)
 		return
 	}
 	err = a.db.CreateUser(u, pw1)
 	if err != nil {
-		//send the err msg back (err = errmsg)
-		fmt.Println(err, "createuser error")
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("400 - Bad Request"))
+		data := Data{Error: Error{DBError}}
+		parseLoginPage(&w, data)
 		return
 	}
 
@@ -319,4 +299,15 @@ func (a *App) delUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Deleted Successfully"))
+}
+
+func parseLoginPage(w *http.ResponseWriter, data Data) {
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/loginBody.html", "templates/error.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(*w, data)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

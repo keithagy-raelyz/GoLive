@@ -20,19 +20,9 @@ func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
 	}
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {
-		fmt.Println("session is not valid")
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/allProducts.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = t.Execute(w, data)
-		if err != nil {
-			fmt.Println(err)
-		}
+		parseAllProducts(&w, data)
 		return
 	}
-
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
 		data.User, data.Cart = v.GetSessionOwner()
@@ -40,14 +30,7 @@ func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
 		//TODO verify if we require the products of the merchant
 		data.Merchant.MerchantUser = v.GetSessionOwner()
 	}
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/allProducts.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = t.Execute(w, data)
-	if err != nil {
-		fmt.Println(err)
-	}
+	parseAllProducts(&w, data)
 }
 
 func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
@@ -66,22 +49,11 @@ func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404 - Product ID not registered"))
 		return
 	}
-
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {
-		fmt.Println("session is not valid")
-		t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/product.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = t.Execute(w, data)
-		if err != nil {
-			fmt.Println(err)
-		}
+		parseProductPage(&w, data)
 		return
 	}
-
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
 		data.User, data.Cart = v.GetSessionOwner()
@@ -89,16 +61,10 @@ func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 		//TODO verify if we require the products of the merchant
 		data.Merchant.MerchantUser = v.GetSessionOwner()
 	}
-	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/product.html")
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	w.WriteHeader(http.StatusOK)
 	//w.Write([]byte("200 - Valid merchant ID, displaying store"))
-	err = t.Execute(w, data)
-	if err != nil {
-		fmt.Println(err)
-	}
+	parseProductPage(&w, data)
 
 }
 
@@ -239,4 +205,26 @@ func (a *App) merchIDFromSession(w http.ResponseWriter, r *http.Request) string 
 	}
 	accountOwner := activeSession.(*cache.MerchantSession).GetSessionOwner()
 	return accountOwner.Id
+}
+
+func parseProductPage(w *http.ResponseWriter, data Data) {
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/product.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(*w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func parseAllProducts(w *http.ResponseWriter, data Data) {
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/allProducts.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(*w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
