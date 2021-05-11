@@ -99,6 +99,8 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool
 //}
 
 func (a *App) UpdateSession(r *http.Request) {
+
+	//TODO uncomment this
 	//sessionValue, err := r.Cookie("sessionCookie")
 	//if err != nil {
 	//	// No session cookie

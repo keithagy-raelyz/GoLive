@@ -51,7 +51,7 @@ type products struct {
 func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 
 	rr, _ := ioutil.ReadAll(r.Body)
-	var cart []CartItem
+	var cart []*stripe.CheckoutSessionLineItemParams
 	json.Unmarshal(rr, &cart)
 	for _, item := range cart {
 		fmt.Println(item)

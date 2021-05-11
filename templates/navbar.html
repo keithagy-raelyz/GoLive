@@ -19,7 +19,7 @@
                 <a class="py-2 d-none d-md-inline-block" href="/users/{{$userId}}"
                    style="text-decoration: none;color:white;">{{$userName}}</a>
                 <div class="py-2 d-none d-md-inline-block">
-                    <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDELrequest()>Logout
+                    <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDrequest()>Logout
                     </button>
                 </div>
             {{else}}
@@ -27,7 +27,7 @@
                     <a class="py-2 d-none d-md-inline-block" href="/users/{{$merchId}}"
                        style="text-decoration: none;color:white;">{{$merchName}}</a>
                     <div class="py-2 d-none d-md-inline-block">
-                        <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDELrequest()>Logout
+                        <button type="button" class=" btn btn-primary btn-sm  me-sm-3" onclick=makeDrequest()>Logout
                         </button>
                     </div>
                 {{else}}
@@ -37,7 +37,7 @@
             {{end}}
         </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-        <script>function makeDELrequest() {
+        <script>function makeDrequest() {
                 $.ajax({
                     url: '/login',
                     type: 'DELETE',
