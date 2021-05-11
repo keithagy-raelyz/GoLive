@@ -8,6 +8,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func (a *App) getCart(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +43,7 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("Id")
 
 	a.cacheManager.UpdateCart(activeSession, id, "append")
+	a.cacheManager.BlockStock(id)
 
 	http.Redirect(w, r, "/cart", http.StatusSeeOther)
 }
@@ -56,6 +59,8 @@ func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.cacheManager.UpdateCart(activeSession, productID, "+")
+	a.cacheManager.BlockStock(productID)
+
 	jData, _ := json.Marshal(Response{true})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jData)
@@ -73,6 +78,8 @@ func (a *App) deleteCart(w http.ResponseWriter, r *http.Request) {
 	//Delete one from cart and update in the cache
 
 	a.cacheManager.UpdateCart(activeSession, productID, "-")
+	a.cacheManager.ReleaseStock(productID)
+
 	jData, err := json.Marshal(Response{true})
 	if err != nil {
 		fmt.Println(err)

@@ -4,7 +4,6 @@ import (
 	"GoLive/db"
 	"errors"
 	"fmt"
-	"sort"
 	"time"
 )
 
@@ -17,7 +16,81 @@ type CacheManager struct {
 	activeUserCache activeUserCache // key: session value; value: see session definition below.
 	merchantCache   merchantCache   // key: Pointer to cache; value: access frequency.
 	itemsCache      itemCache       // Populates home page.
-	database        *db.Database
+	database        *db.Database    // Pointer to DB
+	cartsProcessing cartsProcessing // key: cartID(created at checkout); value: cart contents (used to edit/rollback values in the cache stock)
+}
+
+type cartsProcessing struct {
+	carts map[string]Cart
+}
+
+func (c *CacheManager) AddCartProcessing(cartID string, cart Cart) {
+	c.cartsProcessing.carts[cartID] = cart
+}
+
+func (c *CacheManager) CartSuccess(cartID string) {
+	fmt.Println("start of cartsuccess:")
+	for _, item := range c.itemsCache.itemsCache {
+		fmt.Println(*item.item)
+	}
+	delete(c.cartsProcessing.carts, cartID)
+	fmt.Println("end of cartsuccess:")
+	for _, item := range c.itemsCache.itemsCache {
+		fmt.Println(*item.item)
+	}
+}
+
+func (c *CacheManager) CartFailure(cartID string) {
+	fmt.Println("start of cartfailure:")
+	for _, item := range c.itemsCache.itemsCache {
+		fmt.Println(*item.item)
+	}
+	c.Rollback(cartID)
+	fmt.Println("end of cartfailure:")
+	for _, item := range c.itemsCache.itemsCache {
+		fmt.Println(*item.item)
+	}
+}
+
+func (c *CacheManager) Rollback(cartID string) {
+	cart := c.cartsProcessing.carts[cartID]
+	for _, item := range cart {
+		c.itemsCache.itemsCache[item.Product.Id] = cachedItem{
+			item: &db.Product{
+				Id:        item.Product.Id,
+				Name:      item.Product.Name,
+				Quantity:  item.Product.Quantity + item.Count,
+				Thumbnail: item.Product.Thumbnail,
+				Price:     item.Product.Price,
+				ProdDesc:  item.Product.ProdDesc,
+				MerchID:   item.Product.MerchID,
+				Sales:     item.Product.Sales - item.Count,
+			},
+			expiry: time.Now().Add(SessionLife * time.Minute),
+		}
+	}
+}
+
+func (c *CacheManager) BlockStock(productID string) {
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Quantity)
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Sales)
+	c.itemsCache.itemsCache[productID].item.Quantity--
+	c.itemsCache.itemsCache[productID].item.Sales++
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Quantity)
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Sales)
+}
+
+func (c *CacheManager) ReleaseStock(productID string) {
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Quantity)
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Sales)
+	c.itemsCache.itemsCache[productID].item.Quantity++
+	c.itemsCache.itemsCache[productID].item.Sales--
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Quantity)
+	fmt.Println(c.itemsCache.itemsCache[productID].item.Sales)
+}
+
+func (c *CacheManager) ClearActiveUserCart(sessionID string) {
+	c.activeUserCache.cache[sessionID].(*UserSession).clearCart()
 }
 
 // NewCacheManager returns a pointer to an initialized CacheManager.
@@ -25,12 +98,14 @@ func NewCacheManager(database *db.Database) *CacheManager {
 	newAuC := activeUserCache{make(map[string]ActiveSession)}
 	newMC := merchantCache{make(map[string]ActiveSession)}
 	newIC := itemCache{make(map[string]cachedItem), make([]db.Product, 0)}
+	newCP := cartsProcessing{make(map[string]Cart)}
 
 	newCM := &CacheManager{
 		activeUserCache: newAuC,
 		merchantCache:   newMC,
 		itemsCache:      newIC,
 		database:        database,
+		cartsProcessing: newCP,
 	}
 
 	return newCM
@@ -193,13 +268,13 @@ func (u *UserSession) GetSessionOwner() (db.User, []CartItem) {
 func (u *UserSession) updateCart(productID string, operator string, product *db.Product) {
 	switch operator {
 	case "+":
-		for i, _ := range u.cart {
+		for i := range u.cart {
 			if u.cart[i].Product.Id == productID {
 				u.cart[i].Count++
 			}
 		}
 	case "-":
-		for i, _ := range u.cart {
+		for i := range u.cart {
 			if u.cart[i].Product.Id == productID {
 				u.cart[i].Count--
 				if u.cart[i].Count == 0 {
@@ -225,6 +300,10 @@ func (u *UserSession) updateCart(productID string, operator string, product *db.
 	}
 }
 
+func (u *UserSession) clearCart() {
+	u.cart = Cart{}
+}
+
 //activeUserCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
 type activeUserCache struct {
 	cache
@@ -242,14 +321,12 @@ func (c *cache) add(payLoad ActiveSession) {
 		fmt.Println((*c)[key], "added into the cache")
 		fmt.Println(key, "key value during storage")
 		go c.tidy(key, payLoad)
-	} else {
-
 	}
 }
 
 func (c *cache) update(key string, productID string, operator string, cachedItem cachedItem) {
 	if c.check(key) {
-		activeSession, _ := (*c)[key]
+		activeSession := (*c)[key]
 		switch v := activeSession.(type) {
 		case *UserSession:
 			v.updateCart(productID, operator, cachedItem.item)
@@ -306,9 +383,9 @@ type Cart []CartItem
 //cachedMerchant stores the merchant details and products.
 type cachedMerchant struct {
 	session
-	merchant db.MerchantUser
-	products *[]db.Product
-	hitRate  int
+	// merchant db.MerchantUser
+	// products *[]db.Product
+	// hitRate  int
 }
 
 //merchantCache is a wrapper for the default cache type for each Cache to be distinguishable and have internal methods if required.
@@ -335,10 +412,10 @@ type merchantCache struct {
 //	i.updateSorted()
 //}
 
-//sort sorts the sorted item cache.
-func (i *itemCache) sort() {
-	sort.Slice(i.sorted, func(j, k int) bool { return i.sorted[j].Sales > i.sorted[k].Sales })
-}
+// //sort sorts the sorted item cache.
+// func (i *itemCache) sort() {
+// 	sort.Slice(i.sorted, func(j, k int) bool { return i.sorted[j].Sales > i.sorted[k].Sales })
+// }
 
 type CartItem struct {
 	Product db.Product
@@ -358,12 +435,6 @@ func (c Cart) GrandTotal() float64 {
 		total += cartItem.Value()
 	}
 	return total
-}
-
-func rollback() {
-	//db.exec(add back 1)
-	//mutex.unlock()
-	//count ++
 }
 
 //cachedItem stores the information of a product and its session.
@@ -477,9 +548,9 @@ type itemCache struct {
 	sorted     []db.Product
 }
 
-func (c *cachedItem) getID() string {
-	return c.item.Id
-}
+// func (c *cachedItem) getID() string {
+// 	return c.item.Id
+// }
 
 func (c *cachedItem) addQty(amt int) {
 	c.item.Quantity += amt
