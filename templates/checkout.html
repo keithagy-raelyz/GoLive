@@ -4,10 +4,10 @@
         <div class="col-md-4 col-lg-4 order-md-last">
             <h4 class="d-flex justify-content-between align-items-center mb-3">
                 <span class="text-primary">Your cart</span>
-                <span class="badge bg-primary rounded-pill">{{len .}}</span>
+                <span class="badge bg-primary rounded-pill">{{len .Cart}}</span>
             </h4>
             <ul class="list-group mb-3">
-                {{range .}}
+                {{range .Cart}}
                 <li class="list-group-item d-flex justify-content-between lh-sm">
                     <div>
                         <h6 class="my-0">{{.Product.Name}}</h6>
@@ -19,7 +19,7 @@
                 {{end}}
                 <li class="list-group-item d-flex justify-content-between">
                     <span>Total (USD)</span>
-                    <strong>{{.GrandTotal}}</strong>
+                    <strong>{{.Cart.GrandTotal}}</strong>
                 </li>
             </ul>
         </div>
@@ -192,7 +192,7 @@
     checkoutButton.addEventListener("click", function () {
         fetch("/checkout", {
             method: "POST",
-            body: "{{.}}",
+            body: "{{.JSON}}",
         })
             .then(function (response) {
                 return response.json();

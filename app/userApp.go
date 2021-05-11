@@ -17,13 +17,14 @@ import (
 )
 
 type Data struct {
-	User         db.User       //to display individual user
-	Merchant     db.Merchant   //to display individual merchant profile to himself logged in merchant
-	MerchantShop db.Merchant   //display individual merchant shop to consumers public page
-	Merchants    []db.Merchant //to display all the merchants
-	Error        Error         //to display an error message IF there is an error msg
-	Products     []db.Product  //to display featured items
-	Cart         cache.Cart    //to display checkout cart
+	User         db.User       //to display/edit individual user
+	Merchant     db.Merchant   //to display/edit individual merchant profile to himself logged in merchant
+	MerchantShop db.Merchant   //display/edit individual merchant shop to consumers public page
+	Merchants    []db.Merchant //to display/edit all the merchants
+	Error        Error         //to display/edit an error message IF there is an error msg
+	Products     []db.Product  //to display/edit featured items
+	Cart         cache.Cart    //to display/edit checkout cart
+	JSON         string        // to display any FINALIZED data which will not undergo further changes (e.g cart at checkout page)
 }
 type Error struct {
 	ErrMsg string
@@ -73,8 +74,7 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		parseLoginPage(&w, data)
 		return
 	}
-	var cart cache.Cart
-	cart = make([]cache.CartItem, 0)
+	var cart = make([]cache.CartItem, 0)
 	newsessionKey := "U" + uuid.NewV4().String()
 	newsession := cache.NewUserSession(
 		newsessionKey,
@@ -140,7 +140,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 	}
 	sessionKey.Expires = time.Now()
 	http.SetCookie(w, sessionKey)
-	jData, err := json.Marshal(Response{true})
+	jData, _ := json.Marshal(Response{true})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jData)
 
