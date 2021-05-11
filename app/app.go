@@ -95,6 +95,8 @@ func (a *App) setRoutes() {
 	// Checkout
 	a.router.HandleFunc("/checkout", a.checkOutPage).Methods("GET")
 	a.router.HandleFunc("/checkout", a.payment).Methods("POST")
+	a.router.HandleFunc("/success", a.paymentSuccess).Methods("GET")
+	a.router.HandleFunc("/cancel", a.paymentCancelled).Methods("GET")
 
 }
 
