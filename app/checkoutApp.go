@@ -125,9 +125,26 @@ func (a *App) paymentSuccess(w http.ResponseWriter, r *http.Request) {
 	a.cacheManager.CartSuccess(cartID)
 	a.cacheManager.ClearActiveUserCart(cartID)
 
-	fmt.Println("payment success!")
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	activeSession, ok := a.HaveValidSessionCookie(r)
+	if !ok {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	u, _ := activeSession.(*cache.UserSession).GetSessionOwner()
+	data := Data{
+		User: u,
+	}
+	//fmt.Println("payment success!")
+	//http.Redirect(w, r, "/", http.StatusSeeOther)
 	// Execute Template
+	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/success.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = t.Execute(w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (a *App) paymentCancelled(w http.ResponseWriter, r *http.Request) {
