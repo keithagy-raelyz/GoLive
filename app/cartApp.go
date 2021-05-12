@@ -4,7 +4,6 @@ import (
 	"GoLive/cache"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"html/template"
 	"log"
 	"net/http"
