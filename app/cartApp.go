@@ -42,8 +42,6 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("Id")
 
 	a.cacheManager.UpdateCart(activeSession, id, "append")
-	a.cacheManager.BlockStock(id)
-
 	http.Redirect(w, r, "/cart", http.StatusSeeOther)
 }
 
@@ -58,7 +56,6 @@ func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.cacheManager.UpdateCart(activeSession, productID, "+")
-	a.cacheManager.BlockStock(productID)
 
 	jData, _ := json.Marshal(Response{true})
 	w.Header().Set("Content-Type", "application/json")
