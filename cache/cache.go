@@ -118,7 +118,8 @@ func (c *cache) AddItemFromDB(key string, objType string, db *db.Database) (Cach
 	return nil, errors.New("invalid type supplied")
 }
 
-//tidy calls on monitor which checks if the session has expired. If the session has expired, monitor returns and the session is deleted from the cache.
+//tidy calls on monitor which checks if the session has expired.
+// If the session has expired, monitor returns and the session is deleted from the cache.
 func (c *cache) tidy(key string, obj CacheObject) {
 	obj.monitor()
 	delete(*c, key)
