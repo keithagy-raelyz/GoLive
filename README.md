@@ -117,7 +117,7 @@ func (c *cache) add(payLoad CacheObject) {
 	}
 }
 ```
-### Cache Manager
+### CacheManager
 The Cache Manager is essentially a wrapper struct that stores each of the caches in its fields and routes to the respective cache depending on their type. By storing a pointer to the db, the cache manager is able to interact directly with the DB, abstracting the whole implementation from the app.
 ```Go
 type CacheManager struct {
