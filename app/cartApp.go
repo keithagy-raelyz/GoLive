@@ -7,6 +7,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func (a *App) getCart(w http.ResponseWriter, r *http.Request) {
