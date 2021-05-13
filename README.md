@@ -21,9 +21,9 @@ This was written for our Capstone Project in GoSch. Cache Manager is a package t
 ## Problem
 We looked at a traditional E-commerce site and identified the following issues with a typical MERN or go-react app.
 
-Pings to the Database is frequent, Database being stored in harddrives makes cache misses the primary contributing factor to read times.
-Database logic tends to be tightly coupled with the application layer making troubleshooting problematic as the application code base scales.
-Single points of failure, should any of the microservice goes down, the application is unable to continuously serve its function.
+1) Pings to the Database is frequent, Database being stored in harddrives makes cache misses the primary contributing factor to read times.
+2) Database logic tends to be tightly coupled with the application layer making troubleshooting problematic as the application code base scales.
+3) Single points of failure, should any of the microservice goes down, the application is unable to continuously serve its function.
 
 ## Approach
 In order to address the first problem, we decided to store data in memory which has an internal expiry time such that it deletes itself if it isn't accessed again within a specific timeframe. This is a simple and effective solution to the first problem as processing speed in memory is significantly faster. However, as we proceeded to expand on the code base, we noticed the code blocks growing bigger and bigger. This was attributed to the increasing amounts of Database logic that is added into the code on top of the in memory data structures.
