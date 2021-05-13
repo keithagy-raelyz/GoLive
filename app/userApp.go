@@ -17,14 +17,14 @@ import (
 )
 
 type Data struct {
-	User         db.User            //to display/edit individual user
-	Merchant     db.Merchant        //to display/edit individual merchant profile to himself logged in merchant
-	MerchantShop db.Merchant        //display/edit individual merchant shop to consumers public page
-	Merchants    []db.Merchant      //to display/edit all the merchants
-	Error        Error              //to display/edit an error message IF there is an error msg
-	Products     []db.Product       //to display/edit featured items
-	Cart         cache.CartContents //to display/edit checkout cart
-	JSON         string             // to display any FINALIZED data which will not undergo further changes (e.g cart at checkout page)
+	User         db.User       //to display/edit individual user
+	Merchant     db.Merchant   //to display/edit individual merchant profile to himself logged in merchant
+	MerchantShop db.Merchant   //display/edit individual merchant shop to consumers public page
+	Merchants    []db.Merchant //to display/edit all the merchants
+	Error        Error         //to display/edit an error message IF there is an error msg
+	Products     []db.Product  //to display/edit featured items
+	CartData     cache.Cart    //to display/edit checkout cart
+	JSON         string        // to display any FINALIZED data which will not undergo further changes (e.g cart at checkout page)
 }
 type Error struct {
 	ErrMsg string

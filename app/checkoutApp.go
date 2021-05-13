@@ -45,7 +45,7 @@ func (a *App) checkOutPage(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	_, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	jsonCart, err := json.Marshal(c.Contents.Contents)
+	jsonCart, err := json.Marshal(c.Contents())
 	if err != nil {
 		fmt.Println("cart error")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -54,7 +54,7 @@ func (a *App) checkOutPage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Cart:", c)
 	fmt.Println("jsonCart:", string(jsonCart))
 
-	data := Data{Cart: c.Contents,
+	data := Data{CartData: c,
 		JSON: string(jsonCart)}
 	err = t.Execute(w, data)
 	if err != nil {

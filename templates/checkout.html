@@ -5,10 +5,10 @@
         <div class="col-md-8 col-lg-8 order-md-last mx-auto">
             <h4 class="d-flex justify-content-between align-items-center mb-3">
                 <span class="text-primary">Your cart</span>
-                <span class="badge bg-primary rounded-pill">{{len .Cart.Contents}}</span>
+                <span class="badge bg-primary rounded-pill">{{len .CartData.Contents}}</span>
             </h4>
             <ul class="list-group mb-3">
-                {{range .Cart.Contents}}
+                {{range .CartData.Contents}}
                 <li class="list-group-item d-flex justify-content-between lh-sm">
                     <div>
                         <h6 class="my-0">{{.Product.Name}}</h6>
@@ -20,7 +20,7 @@
                 {{end}}
                 <li class="list-group-item d-flex justify-content-between">
                     <span>Total (USD)</span>
-                    <strong>${{$Data.Cart.GrandTotal}}</strong>
+                    <strong>${{$Data.CartData.GrandTotal}}</strong>
                 </li>
             </ul>
             <button id="checkout-button" class="w-100 btn btn-primary btn-lg" type="button">Continue to checkout

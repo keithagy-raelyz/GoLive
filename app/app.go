@@ -122,7 +122,7 @@ func (a *App) home(w http.ResponseWriter, r *http.Request) {
 	switch v := session.(type) {
 	case *cache.UserSession:
 		user, cart := v.GetSessionOwner()
-		data.User, data.Cart = user.User, cart.Contents
+		data.User, data.CartData = user.User, cart
 	case *cache.MerchantSession:
 		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}

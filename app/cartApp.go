@@ -20,8 +20,8 @@ func (a *App) getCart(w http.ResponseWriter, r *http.Request) {
 	}
 	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
 	data := Data{
-		User: u.User,
-		Cart: c.Contents,
+		User:     u.User,
+		CartData: c,
 	}
 	parseCartPage(&w, data)
 }

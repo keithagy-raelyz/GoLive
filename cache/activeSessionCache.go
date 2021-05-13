@@ -41,26 +41,26 @@ func (u *UserSession) GetSessionOwner() (db.MerchantUser, Cart) {
 func (u *UserSession) updateCart(productID string, operator string, product *db.Product, items *itemCache) {
 	switch operator {
 	case "+":
-		for i := range u.cart.Contents.Contents {
-			if u.cart.Contents.Contents[i].Product.Id == productID {
-				u.cart.Contents.Contents[i].Count++
+		for i := range u.cart.contents {
+			if u.cart.contents[i].Product.Id == productID {
+				u.cart.contents[i].Count++
 				items.blockStock(productID)
 			}
 		}
 	case "-":
-		for i := range u.cart.Contents.Contents {
-			if u.cart.Contents.Contents[i].Product.Id == productID {
-				u.cart.Contents.Contents[i].Count--
+		for i := range u.cart.contents {
+			if u.cart.contents[i].Product.Id == productID {
+				u.cart.contents[i].Count--
 				items.blockStock(productID)
-				if u.cart.Contents.Contents[i].Count == 0 {
+				if u.cart.contents[i].Count == 0 {
 					if i == 0 {
-						u.cart.Contents = CartContents{u.cart.Contents.Contents[i+1:]}
-					} else if i == len(u.cart.Contents.Contents)-1 {
-						u.cart.Contents = CartContents{u.cart.Contents.Contents[0:i]}
+						u.cart.contents = u.cart.contents[i+1:]
+					} else if i == len(u.cart.contents)-1 {
+						u.cart.contents = u.cart.contents[0:i]
 					} else {
-						firsthalf := u.cart.Contents.Contents[0:i]
-						secondhalf := u.cart.Contents.Contents[i+1:]
-						u.cart.Contents = CartContents{append(firsthalf, secondhalf...)}
+						firsthalf := u.cart.contents[0:i]
+						secondhalf := u.cart.contents[i+1:]
+						u.cart.contents = append(firsthalf, secondhalf...)
 					}
 				}
 			}
@@ -71,11 +71,11 @@ func (u *UserSession) updateCart(productID string, operator string, product *db.
 			*product,
 			1,
 		}
-		if alreadyInCart(u.cart.Contents.Contents, cartItem) {
+		if alreadyInCart(u.cart.contents, cartItem) {
 			u.updateCart(productID, "+", product, items)
 			return
 		} else {
-			u.cart.Contents = CartContents{append(u.cart.Contents.Contents, cartItem)}
+			u.cart.contents = append(u.cart.contents, cartItem)
 		}
 	}
 }
