@@ -26,7 +26,7 @@ func (i *itemCache) releaseStock(productID string) {
 
 func (c *itemCache) rollback(user *UserSession) {
 	cart := user.cart
-	for _, item := range cart.contents {
+	for _, item := range cart.Contents.Contents {
 		c.cache[item.Product.Id].(*CachedItem).addQty(item.Count)
 		c.cache[item.Product.Id].(*CachedItem).reduceQty(item.Count)
 		c.cache[item.Product.Id].updateExpiryTime(time.Now().Add(SessionLife * time.Minute))

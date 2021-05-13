@@ -46,7 +46,7 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
 		user, cart := v.GetSessionOwner()
-		data.User, data.Cart = user.User, cart
+		data.User, data.Cart = user.User, cart.Contents
 	case *cache.MerchantSession:
 		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
@@ -86,7 +86,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
 		user, cart := v.GetSessionOwner()
-		data.User, data.Cart = user.User, cart
+		data.User, data.Cart = user.User, cart.Contents
 	case *cache.MerchantSession:
 		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}

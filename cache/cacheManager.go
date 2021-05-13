@@ -4,7 +4,8 @@ import (
 	"GoLive/db"
 	"database/sql"
 	"errors"
-	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 //CacheManager stores the various cache types and has CRUD functionality to access the underlying cache methods.
@@ -65,7 +66,6 @@ func (c *CacheManager) GetAllMerchants() ([]db.Merchant, error) {
 
 //AddtoCache identifies the type of the payload before adding it into the respective cache by calling on the respective cache.add() method.
 func (c *CacheManager) AddtoCache(payLoad CacheObject) {
-	fmt.Println("addtocache")
 	switch v := payLoad.(type) {
 	case *UserSession:
 		c.activeUserCache.add(v)
@@ -164,7 +164,11 @@ func (c *CacheManager) DeleteProduct(prodID string, merchID string) error {
 
 //CreateMerchant calls on the createmerchant method from the database.
 func (c *CacheManager) CreateMerchant(merchant db.MerchantUser, pw string) error {
-	return c.database.CreateMerchant(merchant, pw)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	return c.database.CreateMerchant(merchant, string(hashed))
 }
 
 //CheckMerchant checks if the merchant exists in the database.
@@ -179,7 +183,11 @@ func (c *CacheManager) CheckUser(user db.User) error {
 
 //CreateUser creates a user in the database.
 func (c *CacheManager) CreateUser(user db.User, pw string) error {
-	return c.database.CreateUser(user, pw)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	return c.database.CreateUser(user, string(hashed))
 }
 
 //UpdateUser updates the user in the database.

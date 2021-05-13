@@ -1,8 +1,7 @@
 {{define "cartBody"}}
     <div class="px-4 pt-5 my-5 text-center border-bottom">
         <div class="col-lg-8 mx-auto justify-content-between align-items-center">
-            {{$cart:= .Contents}}
-            {{with .}}
+            {{with .Contents}}
             <table class="table">
                 <thead>
                 <tr>
@@ -20,7 +19,7 @@
                 <tbody>
 
 
-                {{range .Contents}}
+                {{range .}}
                     <tr>
                         <td class="td">{{.Product.Id}}</td>
                         <td class="td">{{.Product.Name}}</td>

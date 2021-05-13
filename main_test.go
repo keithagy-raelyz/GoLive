@@ -75,7 +75,7 @@ func TestPostMerch(t *testing.T) {
 	}
 	req.ParseForm()
 	req.Form.Add("username", "abcd1234")
-	req.Form.Add("MerchDesc", "selling drugs")
+	req.Form.Add("MerchDesc", "another merch")
 	req.Form.Add("email", "test@email.com")
 	req.Form.Add("pw1", "a")
 	req.Form.Add("pw2", "a")

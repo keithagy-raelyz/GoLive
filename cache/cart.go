@@ -6,8 +6,12 @@ import (
 
 //Cart type stores an array of CartItems for processing. The paymentProcessing boolean tracks the status of the cart.
 type Cart struct {
-	contents          []CartItem
+	Contents          CartContents
 	paymentProcessing bool // true = processing; false = active/user still shopping
+}
+
+type CartContents struct {
+	Contents []CartItem
 }
 
 //CartItem stores a product and the amount added to the cart.
@@ -18,7 +22,7 @@ type CartItem struct {
 
 //NewCart initializes an empty cart.
 func NewCart() Cart {
-	return Cart{make([]CartItem, 0), false}
+	return Cart{CartContents{make([]CartItem, 0)}, false}
 }
 
 //Total calculates the total amount paid for a particular type of cartitem.
@@ -31,15 +35,15 @@ func (c CartItem) Value() float64 {
 	return float64(c.Count) * c.Product.Price
 }
 
-//Contents provides a copy of the cart.
-func (c Cart) Contents() []CartItem {
-	return c.contents
-}
+// //Contents provides a copy of the cart.
+// func (c Cart) Contents() CartContents {
+// 	return c.Contents
+// }
 
 //GrandTotal is used in templates to provide an indication of the total amount.
-func (c Cart) GrandTotal() float64 {
+func (c CartContents) GrandTotal() float64 {
 	var total float64
-	for _, cartItem := range c.contents {
+	for _, cartItem := range c.Contents {
 		total += cartItem.Value()
 	}
 	return total

@@ -3,7 +3,6 @@ package cache
 import (
 	"GoLive/db"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -28,8 +27,8 @@ func (c *cache) add(payLoad CacheObject) {
 	key := payLoad.getKey()
 	if ok := c.check(key); !ok {
 		(*c)[key] = payLoad
-		fmt.Println((*c)[key], "added into the cache")
-		fmt.Println(key, "key value during storage")
+		// fmt.Println((*c)[key], "added into the cache")
+		// fmt.Println(key, "key value during storage")
 		go c.tidy(key, payLoad)
 	}
 }
@@ -64,9 +63,9 @@ func (c *cache) get(key string, objType string, database *db.Database) (CacheObj
 	if retrieved, ok := (*c)[key]; !ok {
 		switch string(key[0]) {
 		case "U":
-			return &UserSession{}, errors.New("User session Expired")
+			return &UserSession{}, errors.New("user session expired")
 		case "M":
-			return &MerchantSession{}, errors.New("User session Expired")
+			return &MerchantSession{}, errors.New("user session expired")
 		default:
 			// Additem gets from the DB
 			itemToCache, err := c.AddItemFromDB(key, objType, database)
@@ -116,7 +115,7 @@ func (c *cache) AddItemFromDB(key string, objType string, db *db.Database) (Cach
 		}
 		return &cachedMerchant, nil
 	}
-	return nil, errors.New("Invalid type supplied")
+	return nil, errors.New("invalid type supplied")
 }
 
 //tidy calls on monitor which checks if the session has expired. If the session has expired, monitor returns and the session is deleted from the cache.

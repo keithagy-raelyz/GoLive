@@ -6,9 +6,10 @@ import (
 	// "fmt"
 
 	"GoLive/app"
+	"os"
+
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v71"
-	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -20,7 +21,7 @@ var (
 func main() {
 	godotenv.Load()
 	stripe.Key = os.Getenv("STRIPEKEY")
-	a := &app.App{}
+	a = &app.App{}
 	a.StartApp()
 }
 
