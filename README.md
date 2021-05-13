@@ -44,13 +44,13 @@ In order to address the 3rd problem, we intended to implement a load balancer an
 
 ### Expiry
 The expiry type is the building block for all our cached data.
-```
+```Go
 type expiry struct{
 expiry time.Time
 }
 ```
 It contains the time in which the data was cached and methods to self regulate. Access to the data would call on the updateExpiryTime method which refreshes the time to the current time.
-```
+```Go
 //monitor sleeps for the difference between the expiration time and the current time.
 //eg expires at 4pm, current time is 4.30pm. it sleeps for 30mins.
 //after sleep ends, it checks if the expiration time has exceeded the current time it returns.
@@ -71,7 +71,7 @@ func (e *expiry) updateExpiryTime(updatedTime time.Time) {
 }
 ```
 When data is added into a cache, the caches self regulate through the tidy function which is fired off in go routines.
-```
+```Go
 func (c *cache) add(payLoad CacheObject) {
 	key := payLoad.getKey()
 	if ok := c.check(key); !ok {
@@ -83,7 +83,7 @@ func (c *cache) add(payLoad CacheObject) {
 }
 ```
 The tidy function calls on monitor which blocks and eventually deletes the item off the map when the monitor function returns.
-```
+```Go
 func (c *cache) tidy(key string, session CacheObject) {
 	session.monitor()
 	delete(*c, key)
@@ -92,7 +92,7 @@ func (c *cache) tidy(key string, session CacheObject) {
 
 ### Cache Object
 The Cache Object interface is the behaviour we require data that is stored in our cache to implement.
-```
+```Go
 type CacheObject interface {
 	monitor()
 	updateExpiryTime(time.Time)
@@ -103,7 +103,7 @@ This is implemented by the various data types through embeddeding the expiry typ
 
 ### Cache
 The cache type then stores each of these cacheobjects in a map and exposes methods to be called upon by the cache manager.
-```
+```Go
 type cache map[string]CacheObject
 
 //eg. add CacheObject
@@ -119,7 +119,7 @@ func (c *cache) add(payLoad CacheObject) {
 ```
 ### Cache Manager
 The Cache Manager is essentially a wrapper struct that stores each of the caches in its fields and routes to the respective cache depending on their type. By storing a pointer to the db, the cache manager is able to interact directly with the DB, abstracting the whole implementation from the app.
-```
+```Go
 type CacheManager struct {
 	activeUserCache activeUserCache 
 	itemsCache      itemCache       
