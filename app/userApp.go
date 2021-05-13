@@ -17,14 +17,14 @@ import (
 )
 
 type Data struct {
-	User         db.User          //to display/edit individual user
-	Merchant     db.Merchant      //to display/edit individual merchant profile to himself logged in merchant
-	MerchantShop db.Merchant      //display/edit individual merchant shop to consumers public page
-	Merchants    []db.Merchant    //to display/edit all the merchants
-	Error        Error            //to display/edit an error message IF there is an error msg
-	Products     []db.Product     //to display/edit featured items
-	Cart         []cache.CartItem //to display/edit checkout cart
-	JSON         string           // to display any FINALIZED data which will not undergo further changes (e.g cart at checkout page)
+	User         db.User       //to display/edit individual user
+	Merchant     db.Merchant   //to display/edit individual merchant profile to himself logged in merchant
+	MerchantShop db.Merchant   //display/edit individual merchant shop to consumers public page
+	Merchants    []db.Merchant //to display/edit all the merchants
+	Error        Error         //to display/edit an error message IF there is an error msg
+	Products     []db.Product  //to display/edit featured items
+	Cart         cache.Cart    //to display/edit checkout cart
+	JSON         string        // to display any FINALIZED data which will not undergo further changes (e.g cart at checkout page)
 }
 type Error struct {
 	ErrMsg string
@@ -59,7 +59,7 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	foundUser, err := a.db.GetUser(username)
+	foundUser, err := a.cacheManager.UserLogin(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
@@ -89,7 +89,8 @@ func (a *App) validateUserLogin(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, newCookie)
 	a.cacheManager.AddtoCache(newsession)
-	p, _ := a.db.GetAllProducts()
+	p, _ := a.cacheManager.GetAllProducts()
+
 	data := Data{User: foundUser, Products: p}
 	parseHomePage(&w, data)
 }
@@ -103,7 +104,7 @@ func (a *App) validateMerchantLogin(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	foundMerch, err := a.db.GetMerchant(username)
+	foundMerch, err := a.cacheManager.MerchantLogin(username)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		//w.Write([]byte("403 - Invalid Login Credentials"))
@@ -147,7 +148,7 @@ func (a *App) logout(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) allUser(w http.ResponseWriter, r *http.Request) {
 	//TODO display all Users
-	users, err := a.db.GetUsers()
+	users, err := a.cacheManager.GetUsers()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -162,7 +163,7 @@ func (a *App) getUser(w http.ResponseWriter, r *http.Request) {
 	// Verify valid ID
 	userID := params["userid"]
 	var u db.User
-	u, err := a.db.GetUser(userID)
+	u, err := a.cacheManager.GetUser(userID)
 	if err != nil {
 		// Invalid user ID inputted
 		w.WriteHeader(http.StatusNotFound)
@@ -200,7 +201,7 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 		parseLoginPage(&w, data)
 		return
 	}
-	err = a.db.CheckUser(u)
+	err = a.cacheManager.CheckUser(u)
 	if err != nil {
 		//send the err msg back (err = errmsg)
 		w.WriteHeader(http.StatusBadRequest)
@@ -217,7 +218,7 @@ func (a *App) postUser(w http.ResponseWriter, r *http.Request) {
 		parseLoginPage(&w, data)
 		return
 	}
-	err = a.db.CreateUser(u, pw1)
+	err = a.cacheManager.CreateUser(u, pw1)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		data := Data{Error: Error{DBError}}
@@ -268,7 +269,7 @@ func (a *App) putUser(w http.ResponseWriter, r *http.Request) {
 	u.Name = username
 	u.Email = email
 	u.Id = userID
-	err := a.db.UpdateUser(u)
+	err := a.cacheManager.UpdateUser(u)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
@@ -287,7 +288,7 @@ func (a *App) delUser(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404 - Status not Found"))
 		return
 	}
-	err := a.db.DeleteUser(userID)
+	err := a.cacheManager.DeleteUser(userID)
 	if err != nil {
 		log.Fatal(err)
 	}

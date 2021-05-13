@@ -30,10 +30,11 @@ type UserSession struct { // cart CRUD tied to methods on this type.
 	session
 }
 
-func (u *UserSession) GetSessionOwner() (db.MerchantUser, []CartItem) {
+//GetSessionOwner returns the user and his cart
+func (u *UserSession) GetSessionOwner() (db.MerchantUser, Cart) {
 	return db.MerchantUser{
 		User:      u.owner,
-		MerchDesc: ""}, u.cart.contents
+		MerchDesc: ""}, u.cart
 }
 
 // UpdateCart updates the session's cart.
@@ -74,6 +75,7 @@ func (u *UserSession) updateCart(productID string, operator string, product *db.
 	}
 }
 
+//clearCart empties the user cart.
 func (u *UserSession) clearCart() {
 	u.cart = Cart{}
 }
@@ -90,6 +92,7 @@ type MerchantSession struct {
 	session
 }
 
+//GetSessionOwner returns the merchant user
 func (m *MerchantSession) GetSessionOwner() (db.MerchantUser, []CartItem) {
 	return m.owner, nil
 }

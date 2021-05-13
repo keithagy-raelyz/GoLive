@@ -91,7 +91,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
 
-	merchant, err := a.db.GetInventory(merchID)
+	merchant, err := a.cacheManager.GetFromCache(merchID, "cachedMerchants")
 	if err != nil {
 		switch err.Error() {
 		case "Invalid Merchant":
@@ -104,7 +104,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 
-			data.MerchantShop = merchant
+			data.MerchantShop = *merchant.(*cache.CachedMerchant).GetCachedMerchant()
 			data.Error = Error{ErrMsg: "Invalid Merchant"}
 			err = t.Execute(w, data)
 			if err != nil {
@@ -121,7 +121,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			data.MerchantShop = merchant
+			data.MerchantShop = *merchant.(*cache.CachedMerchant).GetCachedMerchant()
 			data.Error = Error{ErrMsg: "Merchant has nothing for sale at the moment"}
 			err = t.Execute(w, data)
 			if err != nil {
@@ -141,7 +141,7 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	data.MerchantShop = merchant
+	data.MerchantShop = *merchant.(*cache.CachedMerchant).GetCachedMerchant()
 	err = t.Execute(w, data)
 	if err != nil {
 		log.Fatal(err)
@@ -174,7 +174,7 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("400 - Bad Request"))
 		return
 	}
-	err := a.db.CheckMerchant(m)
+	err := a.cacheManager.CheckMerchant(m)
 	if err != nil {
 
 		//check MerchDesc and pw
@@ -185,7 +185,7 @@ func (a *App) postMerch(w http.ResponseWriter, r *http.Request) {
 			//t.Execute(w, data)
 			return
 		}
-		err = a.db.CreateMerchant(m, pw1)
+		err = a.cacheManager.CreateMerchant(m, pw1)
 
 		if err != nil {
 			//send the err msg back (err = errmsg)
@@ -256,7 +256,7 @@ func (a *App) putMerch(w http.ResponseWriter, r *http.Request) {
 	m.Name = username
 	m.Email = email
 	m.Id = merchID
-	err := a.db.UpdateMerchant(m)
+	err := a.cacheManager.UpdateMerchantCache(m)
 	if err != nil {
 		//TODO proper error handling in template
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -278,7 +278,7 @@ func (a *App) delMerch(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("404 - Status not Found"))
 		return
 	}
-	err := a.db.DeleteMerchant(merchID)
+	err := a.cacheManager.DeleteMerchantFromCache(merchID)
 	if err != nil {
 		// fmt.Println(err)
 		//TODO proper error handling in template
