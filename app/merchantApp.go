@@ -3,11 +3,12 @@ package app
 import (
 	"GoLive/cache"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
+
+	uuid "github.com/satori/go.uuid"
 
 	"strings"
 
@@ -19,7 +20,7 @@ import (
 func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 
 	// No merchant ID supplied. Show all merchants
-	merchants, err := a.db.GetAllMerchants()
+	merchants, err := a.cacheManager.GetAllMerchants()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -44,10 +45,10 @@ func (a *App) allMerch(w http.ResponseWriter, r *http.Request) {
 	//w.Write([]byte("200 - Displaying all merchants"))
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
-		data.User, data.Cart = v.GetSessionOwner()
+		user, cart := v.GetSessionOwner()
+		data.User, data.Cart = user.User, cart
 	case *cache.MerchantSession:
-		//TODO verify if we require the products of the merchant
-		data.Merchant.MerchantUser = v.GetSessionOwner()
+		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
 	t, err := template.ParseFiles("templates/base.html", "templates/footer.html", "templates/navbar.html", "templates/viewAllMerchants.html")
 	if err != nil {
@@ -68,7 +69,6 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	data := Data{}
 	// Merchant ID supplied
 	// Show all products under merchID; if invalid merchID handle error
-	// TODO inventory has to be renamed to accurately reflect no rows were found
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {
 		fmt.Println("session is not valid")
@@ -85,10 +85,10 @@ func (a *App) getMerch(w http.ResponseWriter, r *http.Request) {
 	}
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
-		data.User, data.Cart = v.GetSessionOwner()
+		user, cart := v.GetSessionOwner()
+		data.User, data.Cart = user.User, cart
 	case *cache.MerchantSession:
-		//TODO verify if we require the products of the merchant this is wrong
-		data.Merchant.MerchantUser = v.GetSessionOwner()
+		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
 
 	merchant, err := a.db.GetInventory(merchID)

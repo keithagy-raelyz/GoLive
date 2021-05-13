@@ -36,6 +36,14 @@ func (d *Database) GetUser(username string) (User, error) {
 
 }
 
+func (d *Database) GetUserFromID(id string) (User, error) {
+	result := d.b.QueryRow("SELECT * FROM Users WHERE UserID = ?", id)
+	var user User
+
+	return user, result.Scan(&user.Id, &user.Name, &user.Password, &user.Email)
+
+}
+
 func (d *Database) CreateUser(user User, password string) error {
 	res, err := d.b.Exec("INSERT INTO Users (Username,Password,Email) VALUES (?,?,?)", user.Name, password, user.Email)
 	if err != nil {

@@ -2,25 +2,13 @@ package app
 
 import (
 	"GoLive/cache"
-	"GoLive/db"
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 )
 
 func (a *App) InitializeCacheManager() {
-	a.cacheManager = cache.NewCacheManager(a.db)
-	dummyUserSession := cache.NewUserSession(
-		"6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
-		time.Now().Add(30*time.Minute),
-		db.User{
-			Id:       "4",
-			Name:     "DogShiet",
-			Email:    "feecalmatter@hotmail.com",
-			Password: "abc"},
-		make([]cache.CartItem, 0))
-	a.cacheManager.AddtoCache(dummyUserSession)
+	a.cacheManager = cache.NewCacheManager(a.connectDB())
 }
 
 func (a *App) InitializeBlacklist() {
@@ -62,7 +50,7 @@ func (a *App) Middleware(endPoint http.Handler) http.Handler {
 	})
 }
 
-func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool) {
+func (a *App) HaveValidSessionCookie(r *http.Request) (cache.CacheObject, bool) {
 	// Get session cookie
 	sessionValue, err := r.Cookie("sessionCookie")
 	if err != nil {
@@ -71,12 +59,11 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.ActiveSession, bool
 		return nil, false
 	}
 	sessionValStr := sessionValue.Value
-	session, found := a.cacheManager.GetFromCache(sessionValStr, "activeUsers")
-	if !found {
-		fmt.Println("not found in cache manager")
-		session, found = a.cacheManager.GetFromCache(sessionValStr, "activeMerchants")
+	session, err := a.cacheManager.GetFromCache(sessionValStr, "activeUsers")
+	if err != nil {
+		fmt.Println("not found in cache manager:", nil)
 	}
-	return session, found
+	return session, err
 }
 
 //// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.

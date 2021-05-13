@@ -74,8 +74,8 @@ func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cartID := sessionCookie.Value
-	a.cacheManager.AddCartProcessing(cartID, cart)
+	userID := sessionCookie.Value
+	a.cacheManager.AddCartProcessing(userID)
 
 	domain := "http://localhost:5000"
 
@@ -85,11 +85,11 @@ func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 		}),
 		LineItems:  []*stripe.CheckoutSessionLineItemParams{},
 		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
-		SuccessURL: stripe.String(domain + "/success" + "?cartID=" + cartID),
-		CancelURL:  stripe.String(domain + "/cancel" + "?cartID=" + cartID),
+		SuccessURL: stripe.String(domain + "/success" + "?userID=" + userID),
+		CancelURL:  stripe.String(domain + "/cancel" + "?userID=" + userID),
 	}
 
-	for _, item := range cart {
+	for _, item := range cart.Contents() {
 		params.LineItems = append(params.LineItems,
 			&stripe.CheckoutSessionLineItemParams{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -132,7 +132,7 @@ func (a *App) paymentSuccess(w http.ResponseWriter, r *http.Request) {
 	}
 	u, _ := activeSession.(*cache.UserSession).GetSessionOwner()
 	data := Data{
-		User: u,
+		User: u.User,
 	}
 	//fmt.Println("payment success!")
 	//http.Redirect(w, r, "/", http.StatusSeeOther)

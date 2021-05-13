@@ -12,7 +12,6 @@ import (
 	"net/http"
 
 	"GoLive/cache"
-	"GoLive/db"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -20,8 +19,8 @@ import (
 )
 
 type App struct {
-	router       *mux.Router
-	db           *db.Database
+	router *mux.Router
+	// db           *db.Database
 	cacheManager *cache.CacheManager
 	blacklist    map[string]bool
 }
@@ -36,15 +35,15 @@ func (a *App) StartApp() {
 }
 
 // Helpers for starting application.
-func (a *App) connectDB() {
+func (a *App) connectDB() *sql.DB {
 	connectionString := fmt.Sprintf("%s:%s@tcp(127.0.0.1:%s)/%s", os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	var err error
-	a.db = &db.Database{}
+
 	sqlDB, err := sql.Open("mysql", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
-	a.db.InitializeDB(sqlDB)
+	return sqlDB
 }
 
 func (a *App) setRoutes() {
@@ -110,23 +109,22 @@ func (a *App) TestRoute(recorder *httptest.ResponseRecorder, request *http.Reque
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {
-	//TODO fix this shit, STOP PINGING THE FUCKING DB
-	p, _ := a.db.GetAllProducts()
+	p, _ := a.cacheManager.GetAllProducts()
 	data := Data{
 		Products: p,
 	}
-	activeSession, ok := a.HaveValidSessionCookie(r)
+	session, ok := a.HaveValidSessionCookie(r)
 	if !ok {
 		parseHomePage(&w, data)
 		return
 	}
 
-	switch v := activeSession.(type) {
+	switch v := session.(type) {
 	case *cache.UserSession:
-		data.User, data.Cart = v.GetSessionOwner()
+		user, cart := v.GetSessionOwner()
+		data.User, data.Cart = user.User, cart
 	case *cache.MerchantSession:
-		//TODO verify if we require the products of the merchant
-		data.Merchant.MerchantUser = v.GetSessionOwner()
+		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
 	parseHomePage(&w, data)
 }

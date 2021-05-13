@@ -25,10 +25,10 @@ func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
 	}
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
-		data.User, data.Cart = v.GetSessionOwner()
+		user, cart := v.GetSessionOwner()
+		data.User, data.Cart = user.User, cart
 	case *cache.MerchantSession:
-		//TODO verify if we require the products of the merchant
-		data.Merchant.MerchantUser = v.GetSessionOwner()
+		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
 	parseAllProducts(&w, data)
 }
@@ -56,10 +56,10 @@ func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 	}
 	switch v := activeSession.(type) {
 	case *cache.UserSession:
-		data.User, data.Cart = v.GetSessionOwner()
+		user, cart := v.GetSessionOwner()
+		data.User, data.Cart = user.User, cart
 	case *cache.MerchantSession:
-		//TODO verify if we require the products of the merchant
-		data.Merchant.MerchantUser = v.GetSessionOwner()
+		data.Merchant.MerchantUser, _ = v.GetSessionOwner()
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -203,7 +203,7 @@ func (a *App) merchIDFromSession(w http.ResponseWriter, r *http.Request) string 
 	if !found {
 		http.Redirect(w, r, "/", http.StatusNotFound)
 	}
-	accountOwner := activeSession.(*cache.MerchantSession).GetSessionOwner()
+	accountOwner, _ := activeSession.(*cache.MerchantSession).GetSessionOwner()
 	return accountOwner.Id
 }
 

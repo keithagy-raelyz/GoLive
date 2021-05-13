@@ -20,7 +20,7 @@ func (a *App) getCart(w http.ResponseWriter, r *http.Request) {
 	}
 	u, c := activeSession.(*cache.UserSession).GetSessionOwner()
 	data := Data{
-		User: u,
+		User: u.User,
 		Cart: c,
 	}
 	parseCartPage(&w, data)
@@ -41,7 +41,7 @@ func (a *App) postCart(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.FormValue("Id")
 
-	a.cacheManager.UpdateCart(activeSession, id, "append")
+	a.cacheManager.UpdateCache(activeSession, id, "append")
 	http.Redirect(w, r, "/cart", http.StatusSeeOther)
 }
 
@@ -55,8 +55,7 @@ func (a *App) updateCart(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	a.cacheManager.UpdateCart(activeSession, productID, "+")
-
+	a.cacheManager.UpdateCache(activeSession, productID, "+")
 	jData, _ := json.Marshal(Response{true})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jData)
@@ -73,7 +72,7 @@ func (a *App) deleteCart(w http.ResponseWriter, r *http.Request) {
 	}
 	//Delete one from cart and update in the cache
 
-	a.cacheManager.UpdateCart(activeSession, productID, "-")
+	a.cacheManager.UpdateCache(activeSession, productID, "-")
 	a.cacheManager.ReleaseStock(productID)
 
 	jData, err := json.Marshal(Response{true})
