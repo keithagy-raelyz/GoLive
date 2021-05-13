@@ -59,11 +59,13 @@ func (a *App) HaveValidSessionCookie(r *http.Request) (cache.CacheObject, bool) 
 		return nil, false
 	}
 	sessionValStr := sessionValue.Value
-	session, err := a.cacheManager.GetFromCache(sessionValStr, "activeUsers")
+	fmt.Println(sessionValStr)
+	session, err := a.cacheManager.GetFromCache(sessionValStr, "activeSession")
 	if err != nil {
 		fmt.Println("not found in cache manager:", nil)
+		return session, false
 	}
-	return session, err
+	return session, true
 }
 
 //// UpdateSession is an App method, to be called by HTTP handlers for the relevant cache manager to refresh sessions / update carts for the active user.

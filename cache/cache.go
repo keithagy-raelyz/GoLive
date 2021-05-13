@@ -2,6 +2,7 @@ package cache
 
 import (
 	"GoLive/db"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -33,7 +34,9 @@ func (c *cache) add(payLoad CacheObject) {
 	}
 }
 
-func (c *cache) update(key string, productID string, operator string, toCache cachedItem, items *itemCache) {
+//update takes in the key of the cache which uses the returned cacheObject to identify the method to call.
+//for CachedItem, it updates the expiry time. Whilst for users, the cart is updated.
+func (c *cache) update(key string, productID string, operator string, toCache CachedItem, items *itemCache) {
 	if c.check(key) {
 		cacheObject := (*c)[key]
 		switch v := cacheObject.(type) {
@@ -41,7 +44,7 @@ func (c *cache) update(key string, productID string, operator string, toCache ca
 			v.updateCart(productID, operator, toCache.item, items)
 		case *MerchantSession:
 			//c.activeUserCache.refresh(v)
-		case *cachedItem:
+		case *CachedItem:
 			v.updateExpiryTime(time.Now().Add(SessionLife * time.Minute))
 		}
 	}
@@ -57,19 +60,25 @@ func (c *cache) update(key string, productID string, operator string, toCache ca
 // }
 
 //get returns the CacheObject stored in the cache given the key.
-func (c *cache) get(key string, userID string, database *db.Database) (CacheObject, error) {
-	if retrieved, ok := ((*c)[key]); !ok {
+func (c *cache) get(key string, objType string, database *db.Database) (CacheObject, error) {
+	if retrieved, ok := (*c)[key]; !ok {
+		switch string(key[0]) {
+		case "U":
+			return &UserSession{}, errors.New("User session Expired")
+		case "M":
+			return &MerchantSession{}, errors.New("User session Expired")
+		default:
+			// Additem gets from the DB
+			itemToCache, err := c.AddItemFromDB(key, objType, database)
+			if err != nil {
+				return itemToCache, err
+			}
 
-		// Additem gets from the DB
-		itemToCache, err := c.AddItemFromDB(key, userID, database)
-		if err != nil {
-			return itemToCache, err
+			//additemtocache
+			(*c)[itemToCache.getKey()] = itemToCache
+			go c.tidy(itemToCache.getKey(), itemToCache)
+			return itemToCache, nil
 		}
-
-		//additemtocache
-		(*c)[itemToCache.getKey()] = itemToCache
-		go c.tidy(itemToCache.getKey(), itemToCache)
-		return itemToCache, nil
 	} else {
 		retrieved.updateExpiryTime(time.Now().Add(SessionLife * time.Minute))
 		((*c)[key]) = retrieved
@@ -82,34 +91,32 @@ func (c *cache) get(key string, userID string, database *db.Database) (CacheObje
 	// return cacheObject, ok
 }
 
-func (c *cache) AddItemFromDB(key string, userID string, db *db.Database) (CacheObject, error) {
-	switch string(key[0]) {
-	case "U":
-		user, err := db.GetUserFromID(userID)
-		if err != nil {
-			return &UserSession{}, err
-		}
-		return NewUserSession(key, time.Now().Add(SessionLife*time.Minute), user, NewCart()), nil
-
-	case "M":
-		merch, err := db.GetInventory(userID)
-		if err != nil {
-			return &MerchantSession{}, err
-		}
-		return NewMerchSession(key, time.Now().Add(SessionLife*time.Minute), merch.MerchantUser), nil
-
-	default:
+//AddItemFrom DB pings the DB for an item if it isn't found initially in the cache.
+func (c *cache) AddItemFromDB(key string, objType string, db *db.Database) (CacheObject, error) {
+	switch objType {
+	case "product":
 		//DB interaction with error returned return error here
 		prod, err := db.GetProduct(key)
 		if err != nil {
-			return &cachedItem{}, err
+			return &CachedItem{}, err
 		}
-		cachedItem := cachedItem{
+		cachedItem := CachedItem{
 			item:   &prod,
 			expiry: expiry{time.Now().Add(SessionLife * time.Minute)},
 		}
 		return &cachedItem, nil
+	case "merchant":
+		merch, err := db.GetInventory(key)
+		if err != nil {
+			return &CachedMerchant{}, err
+		}
+		cachedMerchant := CachedMerchant{
+			merchantPage: &merch,
+			expiry:       expiry{time.Now().Add(SessionLife * time.Minute)},
+		}
+		return &cachedMerchant, nil
 	}
+	return nil, errors.New("Invalid type supplied")
 }
 
 //tidy calls on monitor which checks if the session has expired. If the session has expired, monitor returns and the session is deleted from the cache.

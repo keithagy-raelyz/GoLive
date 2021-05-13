@@ -17,21 +17,21 @@ type createCheckoutSessionResponse struct {
 	SessionID string `json:"id"`
 }
 
-type CartItem struct {
-	Product products `json:"product"`
-	Count   int      `json:"count,omitempty"`
-}
-
-type products struct {
-	Id        string  `json:"id,omitempty"`
-	Name      string  `json:"name,omitempty"`
-	Quantity  int     `json:"quantity,omitempty"`
-	Thumbnail string  `json:"thumbnail,omitempty"`
-	Price     float64 `json:"price,omitempty"`
-	ProdDesc  string  `json:"prod_desc,omitempty"`
-	MerchID   string  `json:"merch_id,omitempty"`
-	Sales     int     `json:"sales,omitempty"`
-}
+//type CartItem struct {
+//	Product products `json:"product"`
+//	Count   int      `json:"count,omitempty"`
+//}
+//
+//type products struct {
+//	Id        string  `json:"id,omitempty"`
+//	Name      string  `json:"name,omitempty"`
+//	Quantity  int     `json:"quantity,omitempty"`
+//	Thumbnail string  `json:"thumbnail,omitempty"`
+//	Price     float64 `json:"price,omitempty"`
+//	ProdDesc  string  `json:"prod_desc,omitempty"`
+//	MerchID   string  `json:"merch_id,omitempty"`
+//	Sales     int     `json:"sales,omitempty"`
+//}
 
 func (a *App) checkOutPage(w http.ResponseWriter, r *http.Request) {
 	activeSession, ok := a.HaveValidSessionCookie(r)
@@ -45,7 +45,7 @@ func (a *App) checkOutPage(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	_, c := activeSession.(*cache.UserSession).GetSessionOwner()
-	jsonCart, err := json.Marshal(c)
+	jsonCart, err := json.Marshal(c.Contents())
 	if err != nil {
 		fmt.Println("cart error")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -62,11 +62,14 @@ func (a *App) checkOutPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type CheckOutCart []cache.CartItem
+
 func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 
 	rawData, _ := ioutil.ReadAll(r.Body)
-	var cart cache.Cart
+	var cart CheckOutCart
 	json.Unmarshal(rawData, &cart)
+	fmt.Println(cart, "cart at payment")
 	sessionCookie, err := r.Cookie("sessionCookie")
 	if err != nil {
 		fmt.Println("session is not valid")
@@ -89,7 +92,7 @@ func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 		CancelURL:  stripe.String(domain + "/cancel" + "?userID=" + userID),
 	}
 
-	for _, item := range cart.Contents() {
+	for _, item := range cart {
 		params.LineItems = append(params.LineItems,
 			&stripe.CheckoutSessionLineItemParams{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -121,9 +124,9 @@ func (a *App) payment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) paymentSuccess(w http.ResponseWriter, r *http.Request) {
-	cartID := r.URL.Query().Get("cartID")
-	a.cacheManager.CartSuccess(cartID)
-	a.cacheManager.ClearActiveUserCart(cartID)
+	userID := r.URL.Query().Get("userID")
+	fmt.Println(userID)
+	a.cacheManager.ClearActiveUserCart(userID)
 
 	activeSession, ok := a.HaveValidSessionCookie(r)
 	if !ok {

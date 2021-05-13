@@ -14,11 +14,12 @@ import (
 )
 
 func (a *App) allProd(w http.ResponseWriter, r *http.Request) {
-	p, _ := a.db.GetAllProducts()
+	p, _ := a.cacheManager.GetAllProducts()
 	data := Data{
 		Products: p,
 	}
 	activeSession, ok := a.HaveValidSessionCookie(r)
+	fmt.Println(activeSession)
 	if !ok {
 		parseAllProducts(&w, data)
 		return
@@ -40,8 +41,8 @@ func (a *App) getProd(w http.ResponseWriter, r *http.Request) {
 
 	// Product ID supplied
 	// Show all products under prodID; if invalid prodID handle error
-	product, err := a.db.GetProduct(prodID)
-	var products = []db.Product{product}
+	product, err := a.cacheManager.GetFromCache(prodID, "cachedItems")
+	var products = []db.Product{product.(*cache.CachedItem).Copy()}
 	data := Data{Products: products}
 	if err != nil {
 		// Product ID not registered
@@ -93,7 +94,7 @@ func (a *App) postProd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := db.Product{Name: name, ProdDesc: ProdDesc, Thumbnail: thumbnail, Price: price, Quantity: quantity, MerchID: merchID, Sales: 0}
-	err = a.db.CreateProduct(p)
+	err = a.cacheManager.CreateProduct(p)
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -160,7 +161,7 @@ func (a *App) putProd(w http.ResponseWriter, r *http.Request) {
 		ProdDesc:  ProdDesc,
 		MerchID:   merchID,
 	}
-	err = a.db.UpdateProduct(p)
+	err = a.cacheManager.UpdateProduct(p)
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -183,7 +184,7 @@ func (a *App) delProd(w http.ResponseWriter, r *http.Request) {
 
 	merchID := a.merchIDFromSession(w, r)
 
-	err := a.db.DeleteProduct(prodID, merchID)
+	err := a.cacheManager.DeleteProduct(prodID, merchID)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte("422 - Unprocessable Entity"))
@@ -199,8 +200,8 @@ func (a *App) merchIDFromSession(w http.ResponseWriter, r *http.Request) string 
 		return ""
 	}
 	sessionValStr := sessionCookie.String()
-	activeSession, found := a.cacheManager.GetFromCache(sessionValStr, "activeMerchants")
-	if !found {
+	activeSession, err := a.cacheManager.GetFromCache(sessionValStr, "activeMerchants")
+	if err != nil {
 		http.Redirect(w, r, "/", http.StatusNotFound)
 	}
 	accountOwner, _ := activeSession.(*cache.MerchantSession).GetSessionOwner()
